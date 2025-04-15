@@ -7,9 +7,6 @@ from rest_framework.response import Response
 from rest_framework import status
 
 class HotelListView(APIView):
-    """
-    View to list all hotels.
-    """
     def get(self, request):
         hotels = Hotel.objects.all()
         serializer = HotelSerializer(hotels, many=True)
@@ -22,9 +19,6 @@ class HotelListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class HotelUpdateView(APIView):
-    """
-    View to update a hotel.
-    """
     def get_object(self, pk):
         try:
             return Hotel.objects.get(pk=pk)
@@ -40,9 +34,33 @@ class HotelUpdateView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HotelDeleteView(APIView):
+    def get_object(self, pk):
+        try:
+            return Hotel.objects.get(pk=pk)
+        except Hotel.DoesNotExist:
+            return None
+
     def delete(self, request, pk):
         hotel = self.get_object(pk)
         if hotel is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
         hotel.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Hotel deleted"}, status=status.HTTP_204_NO_CONTENT)
+    
+
+class HotelDetailView(APIView):
+    def get_object(self, pk):
+        try:
+            return Hotel.objects.get(pk=pk)
+        except Hotel.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        hotel = self.get_object(pk)
+        if hotel is None:
+            return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = HotelSerializer(hotel)
+        return Response(serializer.data)
