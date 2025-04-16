@@ -10,4 +10,11 @@ urlpatterns = [
     path('roomcreate/', RoomCreateView.as_view(), name='room-create'),
     path('roomupdate/<int:pk>/', RoomUpdateView.as_view(), name='room-update'),
     path('roomdelete/<int:pk>/', RoomDeleteView.as_view(), name='room-delete'),
+    path("createimage/", HotelImageCreateView.as_view(), name="hotel-image-create"),
+    path("listimage/", HotelImageListView.as_view(), name="hotel-image-list"),
+    path("updateimage/<int:pk>/", HotelImageUpdateView.as_view(), name="hotel-image-update"),
+    path("deleteimage/<int:pk>/", HotelImageDeleteView.as_view(), name="hotel-image-delete"),
+    # path('roomavailability/<int:pk>/', RoomAvailabilityView.as_view(), name='room-availability'),
+    path('roomdetail/<int:pk>/', RoomDetailView.as_view(), name='room-detail'),
+
 ]

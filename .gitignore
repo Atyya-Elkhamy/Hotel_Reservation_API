@@ -1,6 +1,9 @@
-__pycache__/
+**/__pycache__/
 .vscode/
 .venv/
 **/.env
 **/migrations/
- */migrations/*.py
+*/migrations/*.py
+**/.idea/
+**/.idea/*.xml
+**/.idea/*.iml
