@@ -5,7 +5,6 @@ __pycache__/
 **/migrations/
 */migrations/*.py
 # PyCharm settings
-.idea/
-
-# Virtual environment
-venv/
+**/.idea/
+**/.idea/*.xml
+**/.idea/*.im
