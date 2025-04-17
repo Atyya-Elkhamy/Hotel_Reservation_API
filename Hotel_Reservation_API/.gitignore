@@ -1,0 +1,11 @@
+__pycache__/
+.vscode/
+.venv/
+**/.env
+**/migrations/
+*/migrations/*.py
+# PyCharm settings
+.idea/
+
+# Virtual environment
+venv/
