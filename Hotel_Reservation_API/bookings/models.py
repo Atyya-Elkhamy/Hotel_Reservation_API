@@ -15,10 +15,8 @@ class Booking(models.Model):
         ('failed', 'Failed'),
     ]
 
-    # user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookings")
-    # room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="bookings")
-    user = models.CharField()
-    room = models.IntegerField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookings")
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="bookings")
     check_in = models.DateField()
     check_out = models.DateField()
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -27,7 +25,6 @@ class Booking(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        # - {self.user.username}
-        return f"Booking {self.id}"
+        return f"Booking {self.id} - {self.user.username}"
     class Meta():
         db_table = "booking"

@@ -13,22 +13,30 @@ class BookingSerializer(serializers.ModelSerializer):
         check_out = data.get('check_out')
         room = data.get('room')
 
+        if not room:
+            raise serializers.ValidationError("Room must be specified.")
+
         if self.instance:
-            if self.instance.status == 'confirmed' or self.instance.status == 'cancelled':
+            if self.instance and self.instance.status in ['confirmed', 'cancelled']:
                 raise serializers.ValidationError("You cannot edit a confirmed booking.")
 
         if check_in and check_out:
             if check_out <= check_in:
                 raise serializers.ValidationError("Check-out must be after check-in.")
+            num_nights = (check_out - check_in).days
+            data['total_price'] = num_nights * room.price_per_night
 
-        #     num_nights = (check_out - check_in).days
-        #     data['total_price'] = num_nights * room.price_per_night
+        if check_in and check_out:
+            existing_bookings = Booking.objects.filter(room=room)
+            if self.instance:
+                existing_bookings = existing_bookings.exclude(pk=self.instance.pk)
 
-        current_booking = self.instance
-        existing_bookings = Booking.objects.filter(room=room)
+            for booking in existing_bookings:
+                if booking.status == 'confirmed':
+                    if check_in < booking.check_out and check_out > booking.check_in:
+                        raise serializers.ValidationError(f"Room '{room}' is already booked from {booking.check_in} to {booking.check_out}.")
 
-        if current_booking:
-            existing_bookings = existing_bookings.exclude(pk=current_booking.pk)
+
 
         if self.instance.status == 'confirmed':
             for booking in existing_bookings:
