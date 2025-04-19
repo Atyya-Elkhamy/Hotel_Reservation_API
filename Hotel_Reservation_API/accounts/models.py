@@ -8,6 +8,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class User(AbstractUser):
     ROLE_CHOICES = [
         ('customer', 'Customer'),
+        ('hotel_staff','Hotel Staff'),
         ('hotel_owner', 'Hotel Owner'),
         ('admin', 'Admin'),
     ]
@@ -17,6 +18,14 @@ class User(AbstractUser):
                                                         MinValueValidator(1000000000),
                                                         MaxValueValidator(99999999999999999999)])
     email = models.EmailField(unique=True)
+    confirmed = models.BooleanField(default=False)
+
+    def is_confirmed(self):
+        return self.confirmed
+
+    def set_confirmed(self):
+        self.confirmed = True
+        self.save()
 
     def __str__(self):
         return self.username
