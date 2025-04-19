@@ -70,6 +70,11 @@ class HotelDetailView(APIView):
         serializer = HotelSerializer(hotel)
         return Response(serializer.data)
 
+class HotelFilterByStarsView(APIView):
+    def get(self, request, stars):
+        hotels = Hotel.objects.filter(stars=stars)
+        serializer = HotelSerializer(hotels, many=True)
+        return Response(serializer.data)
 
 class RoomCreateView(APIView):
     def post(self, request):
@@ -84,6 +89,13 @@ class RoomListView(APIView):
         rooms = Room.objects.all()
         serializer = RoomSerializer(rooms, many=True)
         return Response(serializer.data)
+
+class RoomFilterByTypeView(APIView):
+    def get(self, request, room_type):
+        rooms = Room.objects.filter(room_type=room_type)
+        serializer = RoomSerializer(rooms, many=True)
+        return Response(serializer.data)
+
 
 class RoomUpdateView(APIView):
     def get_object(self, pk):
@@ -131,13 +143,6 @@ class RoomDetailView(APIView):
         serializer = RoomSerializer(room)
         return Response(serializer.data)
     
-# class RoomAvailabilityView(APIView):
-#     def get(self, request, pk):
-#         room = self.get_object(pk)
-#         if room is None:
-#             return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
-#         available_rooms = room.available_rooms
-#         return Response({"available_rooms": available_rooms})
 
 class HotelImageCreateView(APIView):
     def post(self, request, pk):

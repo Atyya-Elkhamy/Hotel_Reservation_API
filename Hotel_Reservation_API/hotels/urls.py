@@ -14,7 +14,8 @@ urlpatterns = [
     path("listimage/", HotelImageListView.as_view(), name="hotel-image-list"),
     path("updateimage/<int:pk>/", HotelImageUpdateView.as_view(), name="hotel-image-update"),
     path("deleteimage/<int:pk>/", HotelImageDeleteView.as_view(), name="hotel-image-delete"),
-    # path('roomavailability/<int:pk>/', RoomAvailabilityView.as_view(), name='room-availability'),
     path('roomdetail/<int:pk>/', RoomDetailView.as_view(), name='room-detail'),
+    path('roomfilter/<str:room_type>/', RoomFilterByTypeView.as_view(), name='room-filter'),
+    path('hotelfilter/<int:stars>/', HotelFilterByStarsView.as_view(), name='hotel-filter'),
 
 ]

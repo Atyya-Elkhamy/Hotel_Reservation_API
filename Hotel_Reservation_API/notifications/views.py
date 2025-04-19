@@ -25,7 +25,7 @@ from rest_framework import status
 #     except Exception as e:
 #         return HttpResponse(f"Failed to send email: {e}", status=500)
     
-class SendTestEmailAPIView(APIView):
+class SendConfirmEmailAPIView(APIView):
     def post(self, request):
         serializer = SendEmailSerializer(data=request.data)
         if serializer.is_valid():

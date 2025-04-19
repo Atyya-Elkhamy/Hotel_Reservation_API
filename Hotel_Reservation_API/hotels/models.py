@@ -1,6 +1,8 @@
 from django.db import models
 from accounts.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+import uuid
+from django.utils.timezone import now
 
 
 class Hotel(models.Model):
@@ -20,8 +22,14 @@ class Hotel(models.Model):
         db_table = "hotel"
 
 class HotelImage(models.Model):
+
+    def Hotel_image_path(instance,filename):
+        ext = filename.split('.')[-1]
+        filename = f"{uuid.uuid4()}.{ext}"
+        return f"hotel_images{now().strftime('%y/%m/%d')}/{filename}"
+
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to="hotel_images/")
+    image = models.ImageField(upload_to=Hotel_image_path)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
