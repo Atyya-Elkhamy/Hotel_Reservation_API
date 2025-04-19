@@ -86,9 +86,9 @@ WSGI_APPLICATION = 'Hotel_Reservation_API.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Hotel_Reservation_API',  
-        'USER': 'postgres',
-        'PASSWORD': 'mysecretpassword', 
+        'NAME': 'hotel',  
+        'USER': 'hotel',
+        'PASSWORD': '1234', 
         'HOST': 'localhost',           
         'PORT': '5432',                 
     }
@@ -112,7 +112,12 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ]
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
