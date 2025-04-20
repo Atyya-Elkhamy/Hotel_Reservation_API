@@ -46,7 +46,7 @@ class Room(models.Model):
         ('suite', 'Suite'),
     ]
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="rooms")
-    room_type = models.CharField(max_length=100, choices=ROOM_TYPES)
+    room_type = models.CharField(max_length=100, choices=ROOM_TYPES,unique=True)
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2)
     total_rooms = models.PositiveIntegerField()
     available_rooms = models.PositiveIntegerField()

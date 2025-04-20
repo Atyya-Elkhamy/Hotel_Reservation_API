@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from notifications.models import Notification
+from rest_framework.generics import UpdateAPIView, ListAPIView, CreateAPIView, DestroyAPIView
 
 class HotelListView(APIView):
     def get(self, request):
@@ -19,26 +20,40 @@ class HotelListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class HotelUpdateView(APIView):
-    def get_object(self, pk):
-        try:
-            return Hotel.objects.get(pk=pk)
-        except Hotel.DoesNotExist:
-            return None
+# class HotelUpdateView(APIView):
+#     def get_object(self, pk):
+#         try:
+#             return Hotel.objects.get(pk=pk)
+#         except Hotel.DoesNotExist:
+#             return None
 
-    def put(self, request, pk):
-        hotel = self.get_object(pk)
-        if hotel is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = HotelSerializer(hotel, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            Notification.objects.create(
-                user=request.user,
-                message="Your hotel has been successfully updated!"
-            )
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def put(self, request, pk):
+#         hotel = self.get_object(pk)
+#         if hotel is None:
+#             return Response(status=status.HTTP_404_NOT_FOUND)
+#         serializer = HotelSerializer(hotel, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             Notification.objects.create(
+#                 user=request.user,
+#                 message="Your hotel has been successfully updated!"
+#             )
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class HotelUpdateView(UpdateAPIView):
+    queryset = Hotel.objects.all()
+    serializer_class = HotelSerializer
+    # permission_classes = [IsAuthenticated] 
+    def perform_update(self, serializer):
+        hotel = serializer.save()
+        Notification.objects.create(
+            user=self.request.user,
+            message=f"Your hotel '{hotel.name}' has been successfully updated!"
+        )
+
+
+
 
 
 class HotelDeleteView(APIView):
@@ -53,6 +68,10 @@ class HotelDeleteView(APIView):
         if hotel is None:
             return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
         hotel.delete()
+        Notification.objects.create(
+            user=self.request.user,
+            message=f"Your hotel '{hotel.name}' has been successfully deleted!"
+        )
         return Response({"message": "Hotel deleted"}, status=status.HTTP_204_NO_CONTENT)
     
 
@@ -81,6 +100,10 @@ class RoomCreateView(APIView):
         serializer = RoomSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            Notification.objects.create(
+                user=request.user,
+                message=f"Room '{serializer.validated_data['room_type']}' has been successfully created!"
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -111,6 +134,10 @@ class RoomUpdateView(APIView):
         serializer = RoomSerializer(room, data=request.data)
         if serializer.is_valid():
             serializer.save()
+            Notification.objects.create(
+                user=request.user,
+                message=f"Room '{serializer.validated_data['room_type']}' has been successfully updated!"
+            )
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -127,6 +154,10 @@ class RoomDeleteView(APIView):
         if room is None:
             return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
         room.delete()
+        Notification.objects.create(
+            user=request.user,
+            message=f"Room '{room.room_type}' has been successfully deleted!"
+        )
         return Response({"message": "Room deleted"}, status=status.HTTP_204_NO_CONTENT)
     
 class RoomDetailView(APIView):
@@ -150,6 +181,10 @@ class HotelImageCreateView(APIView):
         serializer = HotelImageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(hotel=hotel)
+            Notification.objects.create(
+                user=request.user,
+                message=f"Image for hotel '{hotel.name}' has been successfully created!"
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class HotelImageListView(APIView):
@@ -172,6 +207,10 @@ class HotelImageUpdateView(APIView):
         serializer = HotelImageSerializer(hotel_image, data=request.data)
         if serializer.is_valid():
             serializer.save()
+            Notification.objects.create(
+                user=request.user,
+                message=f"Image for hotel '{hotel_image.hotel.name}' has been successfully updated!"
+            )
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class HotelImageDeleteView(APIView):
@@ -186,4 +225,8 @@ class HotelImageDeleteView(APIView):
         if hotel_image is None:
             return Response({"error": "Hotel image not found"}, status=status.HTTP_404_NOT_FOUND)
         hotel_image.delete()
+        Notification.objects.create(
+            user=request.user,
+            message=f"Image for hotel '{hotel_image.hotel.name}' has been successfully deleted!"
+        )
         return Response({"message": "Hotel image deleted"}, status=status.HTTP_204_NO_CONTENT)
