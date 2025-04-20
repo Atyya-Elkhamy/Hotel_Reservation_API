@@ -1,9 +1,20 @@
+<<<<<<< HEAD
 **/__pycache__/
+=======
+__pycache__/
+>>>>>>> origin/naghom
 .vscode/
 .venv/
 **/.env
 **/migrations/
 */migrations/*.py
+<<<<<<< HEAD
 **/.idea/
 **/.idea/*.xml
 **/.idea/*.iml
+=======
+# PyCharm settings
+**/.idea/
+**/.idea/*.xml
+**/.idea/*.im
+>>>>>>> origin/naghom
