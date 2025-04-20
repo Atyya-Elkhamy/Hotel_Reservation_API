@@ -11,11 +11,12 @@ class ReviewListCreateAPIView(APIView):
 
     def get(self, request, format=None):
         reviews = Review.objects.all()
-        serializer = ReviewSerializer(reviews, many=True, context={'request': request})
+        serializer = ReviewSerializer(reviews, many=True)
         return Response(serializer.data)
 
-    def post(self, request, format=None):
+    def post(self, request):
         serializer = ReviewSerializer(data=request.data, context={'request': request})
+        print(request)
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -23,7 +24,7 @@ class ReviewListCreateAPIView(APIView):
 
 
 class ReviewDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:

@@ -100,10 +100,6 @@ class RoomCreateView(APIView):
         serializer = RoomSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            Notification.objects.create(
-                user=request.user,
-                message=f"Room '{serializer.validated_data['room_type']}' has been successfully created!"
-            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
