@@ -11,7 +11,7 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 class HotelSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hotel
-        fields = ['id', 'name', 'image']
+        fields = "__all__"  
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_details = UserSimpleSerializer(source='user', read_only=True)
@@ -19,8 +19,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ['id', 'user', 'hotel', 'rating', 'comment', 'created_at',
-                  'updated_at', 'user_details', 'hotel_details']
+        fields = "__all__"
         read_only_fields = ['user', 'created_at', 'updated_at']
 
     def validate(self, data):
