@@ -4,15 +4,30 @@ from email.utils import formataddr
 from twilio.rest import Client
 from django.conf import settings
 from .serializers import UserSerializer, CustomTokenObtainPairSerializer
+from .permissions import *
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.generics import ListAPIView,CreateAPIView,UpdateAPIView,DestroyAPIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.generics import CreateAPIView,ListCreateAPIView,RetrieveUpdateDestroyAPIView,RetrieveUpdateAPIView
+from rest_framework.views import APIView
+from rest_framework import status, permissions
+
 
 
 # allowed for admins
-class UserRegistrationView(CreateAPIView):
+class UserListCreateView(ListCreateAPIView): 
     serializer_class = UserSerializer
+    permission_classes = [IsAdminUser]
+    queryset = UserSerializer.Meta.model.objects.all()
 
-    def create(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    def post(self, request, *args, **kwargs):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -21,14 +36,36 @@ class UserRegistrationView(CreateAPIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
+
 # allowed for admins
-class UserDeleteView(DestroyAPIView):
+class UserRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):  
     serializer_class = UserSerializer
-    queryset = UserSerializer.Meta.model.objects.exclude(role='admin')
+    permission_classes = [IsAdminUser]
+    queryset = UserSerializer.Meta.model.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return JsonResponse(serializer.data)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
+            if instance.role == 'admin':
+                return JsonResponse({"error": "Cannot delete admin user."}, status=400)
             self.perform_destroy(instance)
             return JsonResponse({"message": "User deleted successfully!"}, status=204)
         except Exception as e:
@@ -42,35 +79,62 @@ class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            if serializer.validated_data['role'] != 'customer' or serializer.validated_data['role'] != 'hotel_owner':
+            role = serializer.validated_data['role']
+            confirmed = serializer.validated_data.get['confirmed']
+            if role not in ['customer', 'hotel_owner']:
                 return JsonResponse({"error": "Invalid role. Choose either 'customer' or 'hotel_owner'."}, status=400)
+            elif confirmed:
+                return JsonResponse({"error": "Provided Unknown credentials 'confirmed' "}, status=400)
             else:
                 user = serializer.save(role=serializer.validated_data['role'])
             return JsonResponse({"message": "User created successfully!", "user_id": user.id}, status=201)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-# allowed for anyone
-class HotelOwnerAndCustomerUpdateView(UpdateAPIView):
-    serializer_class = UserSerializer
-    queryset = UserSerializer.Meta.model.objects.exclude(role__in=['admin', 'customer'])
 
+class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView): 
+    serializer_class = UserSerializer
+    permission_classes = [IsHotelOwner | IsCustomer]
+
+    def get_object(self):
+        return self.request.user
+
+    def get(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return JsonResponse(serializer.data)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
     def update(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            confirmed = serializer.validated_data.get['confirmed']
+            if confirmed:
+                return JsonResponse({"error": "Provided Unknown credentials 'confirmed' "}, status=400)
+            else:
+                serializer.save()
             return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
 
 #allowed for hotel oweners
-class EmployeeRegistraionView(CreateAPIView):
+class EmployeeListCreateview(ListCreateAPIView): 
     serializer_class = UserSerializer
+    permission_classes = [IsHotelOwner]
+    queryset = UserSerializer.Meta.model.objects.filter(role='hotel_staff')
 
-    def create(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    def post(self, request, *args, **kwargs):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -80,9 +144,18 @@ class EmployeeRegistraionView(CreateAPIView):
             return JsonResponse({"error": str(e)}, status=400)
 
 # allowed for hotel owners
-class EmployeeUpdateView(UpdateAPIView):
+class EmployeeRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView): 
     serializer_class = UserSerializer
+    permission_classes = [IsHotelOwner]
     queryset = UserSerializer.Meta.model.objects.filter(role='hotel_staff')
+
+    def get(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return JsonResponse(serializer.data)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
     def update(self, request, *args, **kwargs):
         try:
@@ -94,11 +167,6 @@ class EmployeeUpdateView(UpdateAPIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-# allowed for hotel owners
-class EmployeeDeleteView(DestroyAPIView):
-    serializer_class = UserSerializer
-    queryset = UserSerializer.Meta.model.objects.filter(role='hotel_staff')
-
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
@@ -107,10 +175,22 @@ class EmployeeDeleteView(DestroyAPIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-
 # login view
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+#logout view
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return JsonResponse({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 

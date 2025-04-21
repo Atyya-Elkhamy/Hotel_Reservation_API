@@ -25,6 +25,18 @@ class UserSerializer(serializers.ModelSerializer):
             role=validated_data.get('role', 'customer')
         )
         return user
+    
+    def update(self, instance, validated_data):
+        instance.username = validated_data.get('username', instance.username)
+        instance.email = validated_data.get('email', instance.email)
+        instance.phone = validated_data.get('phone', instance.phone)
+        if 'password' in validated_data and 'confirm_password' in validated_data and validated_data['password'] == validated_data['confirm_password']:
+            validate_password(validated_data['password'])
+            instance.set_password(validated_data['password'])
+        else:
+            raise serializers.ValidationError("Passwords do not match.")
+        instance.save()
+        return instance
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
