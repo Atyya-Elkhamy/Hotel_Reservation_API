@@ -6,7 +6,7 @@ from hotels.models import Hotel
 class UserSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username']  #
+        fields = ['id', 'username']
 
 class HotelSimpleSerializer(serializers.ModelSerializer):
     class Meta:
