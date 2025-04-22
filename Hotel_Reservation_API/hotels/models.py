@@ -3,6 +3,7 @@ from accounts.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
 from django.utils.timezone import now
+# from bookings.models import Booking
 
 
 class Hotel(models.Model):
@@ -50,7 +51,29 @@ class Room(models.Model):
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2)
     total_rooms = models.PositiveIntegerField()
     available_rooms = models.PositiveIntegerField()
-    amenities = models.TextField(max_length=500)  
+    amenities = models.TextField(max_length=500) 
+
+    # def save(self, *args, **kwargs):
+    #     booked_rooms = Booking.objects.filter(room=self).count()
+    #     self.available_rooms = max(self.total_rooms - booked_rooms, 0)
+    #     super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        if self.total_rooms < 0:
+            raise ValueError("Total rooms cannot be negative.")
+        if self.available_rooms < 0:
+            raise ValueError("Available rooms cannot be negative.")
+        if self.available_rooms > self.total_rooms:
+            raise ValueError("Available rooms cannot exceed total rooms.")
+        super().save(*args, **kwargs)
+        
+    def save(self, *args, **kwargs):
+        if self.room_type == "suite": 
+            self.price_per_night = 500
+        elif self.room_type == "double":
+            self.price_per_night = 300
+        elif self.room_type == "single":
+            self.price_per_night = 100
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.hotel.name} - {self.room_type}"
