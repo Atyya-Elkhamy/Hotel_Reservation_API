@@ -80,7 +80,7 @@ class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             role = serializer.validated_data['role']
-            confirmed = serializer.validated_data.get['confirmed']
+            confirmed = serializer.validated_data.get('confirmed')
             if role not in ['customer', 'hotel_owner']:
                 return JsonResponse({"error": "Invalid role. Choose either 'customer' or 'hotel_owner'."}, status=400)
             elif confirmed:
