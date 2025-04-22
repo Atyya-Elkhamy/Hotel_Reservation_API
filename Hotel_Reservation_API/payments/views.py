@@ -1,68 +1,88 @@
-# payments/views.py
-from rest_framework import viewsets, status, permissions
-from rest_framework.decorators import action
+from rest_framework import status, permissions
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from decimal import Decimal
 
 from .models import Payment, PaymentSettings
 from .serializers import PaymentSerializer, PaymentSettingsSerializer
-from bookings.models import Booking   
+from bookings.models import Booking
 
-class PaymentViewSet(viewsets.ModelViewSet):
-    serializer_class = PaymentSerializer
+class PaymentListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        if self.request.user.is_staff:
-            return Payment.objects.all()
-        return Payment.objects.filter(user=self.request.user)
+    def get(self, request):
+        if request.user.is_staff:
+            payments = Payment.objects.all()
+        else:
+            payments = Payment.objects.filter(user=request.user)
+        
+        serializer = PaymentSerializer(payments, many=True)
+        return Response(serializer.data)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def post(self, request):
+        serializer = PaymentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'])
-    def process_payment(self, request, pk=None):
-        payment = self.get_object()
+class PaymentDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-        if payment.status != Payment.PaymentStatus.PENDING:
-            return Response({"error": "Payment is not in a pending state."}, status=400)
+    def get(self, request, pk):
+        payment = get_object_or_404(Payment, pk=pk)
+        if payment.user != request.user and not request.user.is_staff:
+            return Response({"error": "Not authorized to view this payment."}, status=status.HTTP_403_FORBIDDEN)
 
-        try:
-            transaction_id = f"TRANS-{payment.id}-{payment.booking.id}"
-            payment.mark_as_completed(transaction_id)
+        serializer = PaymentSerializer(payment)
+        return Response(serializer.data)
 
-            booking = payment.booking
-            if payment.is_deposit:
-                booking.deposit_paid = True
-            else:
-                booking.is_paid = True
-            booking.save()
+    def post(self, request, pk):
+        payment = get_object_or_404(Payment, pk=pk)
 
-            return Response({
-                "success": True,
-                "message": "Payment processed successfully.",
-                "transaction_id": transaction_id
-            })
-        except Exception as e:
-            payment.mark_as_failed()
-            return Response({"error": f"Payment failed: {str(e)}"}, status=400)
+        # Process payment
+        if 'process_payment' in request.data:
+            if payment.status != Payment.PaymentStatus.PENDING:
+                return Response({"error": "Payment is not in a pending state."}, status=400)
 
-    @action(detail=True, methods=['post'])
-    def refund_payment(self, request, pk=None):
-        payment = self.get_object()
+            try:
+                transaction_id = f"TRANS-{payment.id}-{payment.booking.id}"
+                payment.mark_as_completed(transaction_id)
 
-        if payment.status != Payment.PaymentStatus.COMPLETED:
-            return Response({"error": "Only completed payments can be refunded."}, status=400)
+                booking = payment.booking
+                if payment.is_deposit:
+                    booking.deposit_paid = True
+                else:
+                    booking.is_paid = True
+                booking.save()
 
-        try:
-            payment.refund()
-            return Response({"success": True, "message": "Payment refunded successfully."})
-        except Exception as e:
-            return Response({"error": f"Refund failed: {str(e)}"}, status=400)
+                return Response({
+                    "success": True,
+                    "message": "Payment processed successfully.",
+                    "transaction_id": transaction_id
+                })
+            except Exception as e:
+                payment.mark_as_failed()
+                return Response({"error": f"Payment failed: {str(e)}"}, status=400)
 
-    @action(detail=False, methods=['post'])
-    def create_payment_for_reservation(self, request):
+        # Refund payment
+        if 'refund_payment' in request.data:
+            if payment.status != Payment.PaymentStatus.COMPLETED:
+                return Response({"error": "Only completed payments can be refunded."}, status=400)
+
+            try:
+                payment.refund()
+                return Response({"success": True, "message": "Payment refunded successfully."})
+            except Exception as e:
+                return Response({"error": f"Refund failed: {str(e)}"}, status=400)
+
+        return Response({"error": "Invalid action."}, status=400)
+
+class PaymentForReservationCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
         reservation_id = request.data.get('reservation_id')
         payment_method = request.data.get('payment_method')  # string value from choices
         is_deposit = request.data.get('is_deposit', False)
@@ -98,22 +118,31 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 is_deposit=is_deposit
             )
 
-            serializer = self.get_serializer(payment)
-            return Response(serializer.data, status=201)
+            serializer = PaymentSerializer(payment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         except Booking.DoesNotExist:
-            return Response({"error": "Booking not found."}, status=404)
+            return Response({"error": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": f"An error occurred: {str(e)}"}, status=400)
+            return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-
-class PaymentSettingsViewSet(viewsets.ModelViewSet):
-    queryset = PaymentSettings.objects.all()
-    serializer_class = PaymentSettingsSerializer
+class PaymentSettingsView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
-    def get_object(self):
+    def get(self, request):
         settings = PaymentSettings.objects.first()
         if not settings:
             settings = PaymentSettings.objects.create()
-        return settings
+        serializer = PaymentSettingsSerializer(settings)
+        return Response(serializer.data)
+
+    def put(self, request):
+        settings = PaymentSettings.objects.first()
+        if not settings:
+            settings = PaymentSettings.objects.create()
+
+        serializer = PaymentSettingsSerializer(settings, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

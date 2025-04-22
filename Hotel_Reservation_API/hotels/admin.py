@@ -3,5 +3,4 @@ from .models import *
 
 admin.site.register(Hotel)
 admin.site.register(Room)
-
-# Register your models here.
+admin.site.register(HotelImage)

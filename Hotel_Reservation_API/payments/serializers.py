@@ -28,7 +28,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 "booking": "This booking already has a payment."
             })
-
+    
         # 2. Payment amount must be positive
         if amount is not None and amount <= 0:
             raise serializers.ValidationError({
