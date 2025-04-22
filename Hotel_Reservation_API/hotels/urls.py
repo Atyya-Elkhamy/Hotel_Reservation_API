@@ -1,8 +1,8 @@
-from django.urls import path
+from django.urls import path, re_path
 from .views import *
 
 urlpatterns = [
-    path('',HotelListView.as_view(), name='hotel-list'),
+    path('', HotelListView.as_view(), name='hotel-list'),
     path('create/', HotelListView.as_view(), name='hotel-list'),
     path('update/<int:pk>/', HotelUpdateView.as_view(), name='hotel-update'),
     path('detail/<int:pk>/', HotelDetailView.as_view(), name='hotel-detail'),
@@ -14,9 +14,11 @@ urlpatterns = [
     path('roomdelete/<int:pk>/', RoomDeleteView.as_view(), name='room-delete'),
     path('roomdetail/<int:pk>/', RoomDetailView.as_view(), name='room-detail'),
     path('roomfilter/<str:room_type>/', RoomFilterByTypeView.as_view(), name='room-filter'),
-    path("createimage/", HotelImageCreateView.as_view(), name="hotel-image-create"),
-    path("listimages/", HotelImageListView.as_view(), name="hotel-image-list"),
-    path("updateimage/<int:pk>/", HotelImageUpdateView.as_view(), name="hotel-image-update"),
-    path("deleteimage/<int:pk>/", HotelImageDeleteView.as_view(), name="hotel-image-delete"),
 
-]
+   # Hotel Images
+        path("createimage/", HotelImageCreateView.as_view(), name="hotel-image-create"),
+        path("listimages/", HotelImageListView.as_view(), name="hotel-image-list"),
+        path("listimages/<int:pk>/", HotelImageListView.as_view(), name="hotel-image-list-pk"),
+        path("updateimage/<int:pk>/", HotelImageUpdateView.as_view(), name="hotel-image-update"),
+        path("deleteimage/<int:pk>/", HotelImageDeleteView.as_view(), name="hotel-image-delete"),
+]       

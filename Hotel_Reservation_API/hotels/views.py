@@ -172,7 +172,7 @@ class RoomDetailView(APIView):
     
 
 class HotelImageCreateView(APIView):
-    def post(self, request, pk):
+    def post(self, request, pk=None):
         hotel = Hotel.objects.get(pk=pk)
         serializer = HotelImageSerializer(data=request.data)
         if serializer.is_valid():
@@ -184,11 +184,18 @@ class HotelImageCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class HotelImageListView(APIView):
-    def get(self, request, pk):
-        hotel = Hotel.objects.get(pk=pk)
-        images = hotel.images.all()
+    def get(self, request, pk=None):
+        if pk is None:
+            # Return all images across all hotels
+            images = HotelImage.objects.all()
+        else:
+            # Return images for a specific hotel
+            hotel = Hotel.objects.get(pk=pk)
+            images = hotel.images.all()
+        
         serializer = HotelImageSerializer(images, many=True)
         return Response(serializer.data)
+ 
 class HotelImageUpdateView(APIView):
     def get_object(self, pk):
         try:
