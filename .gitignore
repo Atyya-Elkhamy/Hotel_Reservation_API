@@ -4,3 +4,7 @@ __pycache__/
 **/.env
 **/migrations/
 */migrations/*.py
+# PyCharm settings
+**/.idea/
+**/.idea/*.xml
+**/.idea/*.im
