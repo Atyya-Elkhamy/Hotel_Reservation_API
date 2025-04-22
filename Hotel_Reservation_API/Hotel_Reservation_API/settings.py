@@ -88,7 +88,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'Hotel_Reservation_API',  
         'USER': 'postgres',
-        'PASSWORD': 'mysecretpassword', 
+        'PASSWORD': 'lojenmohamed243', 
         'HOST': 'localhost',           
         'PORT': '5432',                 
     }
