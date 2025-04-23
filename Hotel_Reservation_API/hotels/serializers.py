@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from .models import Hotel, Room , HotelImage
 import re
+from  accounts.serializers import UserSerializer
 
 class HotelSerializer(serializers.ModelSerializer):
+    user = UserSerializer(many=False, read_only=True)
     class Meta:
         model = Hotel
         fields = '__all__'
@@ -23,16 +25,24 @@ class HotelSerializer(serializers.ModelSerializer):
         if not re.match(email_pattern, email):
             raise serializers.ValidationError({"email": "Invalid email format"})
 
-        if not name.isalpha():
-            raise serializers.ValidationError({"name": "Name must contain only letters"})
+        if not re.match(r"^[a-zA-Z\s']+$", name):
+            raise serializers.ValidationError({"name": "Name must contain only letters and spaces"})
 
         return attrs
 
     def create(self, validated_data):
         return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        print("Updating hotel with:", validated_data)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class RoomSerializer(serializers.ModelSerializer):
+    Hotel = HotelSerializer(many=False, read_only=True)
     class Meta:
         model = Room
         fields = '__all__'
@@ -65,6 +75,22 @@ class RoomSerializer(serializers.ModelSerializer):
     
 
 class HotelImageSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = HotelImage
+        fields = '__all__'
+   
+    def validate(self, attrs):
+        image = attrs.get('image')
+        if not image:
+            raise serializers.ValidationError({"image": "Image is required"})
+        if not image.name.endswith(('.png', '.jpg', '.jpeg')):
+            raise serializers.ValidationError({"image": "Image must be a PNG, JPG, or JPEG file"})
+        return attrs
+    def create(self, validated_data):
+        return super().create(validated_data)
+    
+class RoomImageSerializer(serializers.ModelSerializer): 
     class Meta:
         model = HotelImage
         fields = '__all__'
