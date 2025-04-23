@@ -17,7 +17,7 @@ class BookingListCreateAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = BookingSerializer(data=request.data)
+        serializer = BookingSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -37,7 +37,7 @@ class BookingDetailAPIView(APIView):
         booking = get_object_or_404(Booking, pk=pk)
         if booking.user != request.user:
             raise PermissionDenied("You do not have permission to view this booking.")
-        serializer = BookingSerializer(booking, data=request.data)
+        serializer = BookingSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Booking
+from datetime import datetime
 from datetime import timedelta
 
 # class BookingSerializer(serializers.ModelSerializer):
@@ -122,6 +123,11 @@ class BookingSerializer(serializers.ModelSerializer):
         check_in = validated_data['check_in']
         check_out = validated_data['check_out']
         room = validated_data['room']
+
+        if isinstance(check_in, str):
+            check_in = datetime.strptime(check_in, "%Y-%m-%d").date()
+        if isinstance(check_out, str):
+            check_out = datetime.strptime(check_out, "%Y-%m-%d").date()
 
         num_nights = (check_out - check_in).days
         validated_data['total_price'] = num_nights * room.price_per_night
