@@ -81,9 +81,12 @@ from datetime import timedelta
 
         #     return data
 class BookingSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    total_price = serializers.DecimalField(read_only=True, max_digits=10, decimal_places=2)
+
     class Meta:
         model = Booking
-        fields = "__all__"
+        fields = '__all__'
 
     def validate(self, data):
         check_in = data.get('check_in')

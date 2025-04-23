@@ -71,7 +71,7 @@ CORS_ALLOWED_ORIGINS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -106,8 +106,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'hotel',  
-        'USER': 'postgres',
-        'PASSWORD': '12345678', 
+        'USER': 'hotel',
+        'PASSWORD': '12345',
         'HOST': 'localhost',           
         'PORT': '5432',                 
     }
