@@ -8,9 +8,10 @@ from django.utils.timezone import now
 from bookings.models import Booking
 
 from uuid import uuid4
+# from django.contrib.gis.db import models as geomodels
 
 class Hotel(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="hotels")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="hotels", null=True)
     name = models.CharField(max_length=255 , unique=True)
     description = models.TextField(blank=True, null=True ,max_length=500)
     location = models.CharField(max_length=255)
@@ -19,8 +20,9 @@ class Hotel(models.Model):
     stars = models.PositiveIntegerField(validators=[MinValueValidator(3), MaxValueValidator(7)],  null= True)
     email = models.EmailField(unique=True ,max_length=100 , null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    price_range = models.CharField(max_length=40, blank=True, null=True)
-
+    price_range = models.CharField(max_length=50, blank=True, null=True)
+    # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     def __str__(self):
         return self.name
     class Meta():
@@ -88,3 +90,19 @@ class Room(models.Model):
         db_table = "room"
 
 
+class RoomImage(models.Model):
+    def Room_image_path(instance,filename):
+        ext = filename.split('.')[-1]
+        filename = f"{uuid.uuid4()}.{ext}"
+        return f'room_images/{datetime.now().strftime("%y/%m/%d")}/{uuid4()}.{filename.split(".")[-1]}'
+
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to=Room_image_path)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for {self.room.room_type}"
+
+    class Meta:
+        db_table = "room_image"
+# class HotelLocation(geomodels.Model):
