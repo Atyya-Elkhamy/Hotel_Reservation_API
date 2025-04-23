@@ -6,6 +6,9 @@ from .models import Booking
 from .serializers import BookingSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import generics
+from .models import Payment
+from .serializers import PaymentSerializer
 
 
 class BookingListCreateAPIView(APIView):
@@ -51,3 +54,11 @@ class BookingDetailAPIView(APIView):
         #     raise PermissionDenied("You do not have permission to view this booking.")
         booking.delete()
         return Response({"detail": "Deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+class CreatePaymentView(generics.CreateAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

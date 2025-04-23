@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from django.utils import timezone
 from django.utils.timezone import now
-# from bookings.models import Booking
+from bookings.models import Booking
 
 from uuid import uuid4
 
@@ -19,7 +19,7 @@ class Hotel(models.Model):
     stars = models.PositiveIntegerField(validators=[MinValueValidator(3), MaxValueValidator(7)],  null= True)
     email = models.EmailField(unique=True ,max_length=100 , null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    price_range = models.CharField(max_length=50, blank=True, null=True)
+    price_range = models.CharField(max_length=40, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -57,27 +57,28 @@ class Room(models.Model):
     total_rooms = models.PositiveIntegerField()
     available_rooms = models.PositiveIntegerField()
     amenities = models.TextField(max_length=500 , null=True) 
-
-    # def save(self, *args, **kwargs):
-    #     booked_rooms = Booking.objects.filter(room=self).count()
-    #     self.available_rooms = max(self.total_rooms - booked_rooms, 0)
-    #     super().save(*args, **kwargs)
+    
     def save(self, *args, **kwargs):
-        if self.total_rooms < 0:
-            raise ValueError("Total rooms cannot be negative.")
-        if self.available_rooms < 0:
-            raise ValueError("Available rooms cannot be negative.")
-        if self.available_rooms > self.total_rooms:
-            raise ValueError("Available rooms cannot exceed total rooms.")
-        super().save(*args, **kwargs)
-        
-    def save(self, *args, **kwargs):
-        if self.room_type == "suite": 
+        # Set price based on room type
+        if self.room_type == "suite":
             self.price_per_night = 500
         elif self.room_type == "double":
             self.price_per_night = 300
         elif self.room_type == "single":
             self.price_per_night = 100
+
+        # Validate room numbers
+        if self.total_rooms < 0:
+            raise ValueError("Total rooms cannot be negative.")
+        booked_rooms = Booking.objects.filter(room=self).count()
+
+        self.available_rooms = max(self.total_rooms - booked_rooms, 0)
+
+        if self.available_rooms < 0:
+            raise ValueError("Available rooms cannot be negative.")
+        if self.available_rooms > self.total_rooms:
+            raise ValueError("Available rooms cannot exceed total rooms.")
+        
         super().save(*args, **kwargs)
      
 
