@@ -103,7 +103,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
         if check_in and check_out:
             if check_out <= check_in:
-                raise serializers.ValidationError("Check-out must be after check-in.")
+                raise serializers.ValidationError({"check_out": "Check-out must be after check-in."})
 
         # Overlapping bookings check
         if check_in and check_out:
@@ -113,9 +113,11 @@ class BookingSerializer(serializers.ModelSerializer):
 
             for booking in existing_bookings:
                 if check_in < booking.check_out and check_out > booking.check_in:
-                    raise serializers.ValidationError(
-                        f"Room '{room}' is already booked from {booking.check_in} to {booking.check_out}."
-                    )
+                    raise serializers.ValidationError({
+                        'non_field_errors': [
+                            f"Room '{room}' is already booked from {booking.check_in} to {booking.check_out}."
+                        ]
+                    })
 
         return data
 
@@ -124,6 +126,20 @@ class BookingSerializer(serializers.ModelSerializer):
         check_out = validated_data['check_out']
         room = validated_data['room']
 
+        # Perform the same validation for overlapping bookings here
+        if check_in and check_out:
+            existing_bookings = Booking.objects.filter(room=room, status='confirmed')
+
+            # Check for overlapping bookings
+            for booking in existing_bookings:
+                if check_in < booking.check_out and check_out > booking.check_in:
+                    raise serializers.ValidationError({
+                        'non_field_errors': [
+                            f"Room '{room}' is already booked from {booking.check_in} to {booking.check_out}."
+                        ]
+                    })
+
+        # Convert string dates to datetime if necessary
         if isinstance(check_in, str):
             check_in = datetime.strptime(check_in, "%Y-%m-%d").date()
         if isinstance(check_out, str):
@@ -133,3 +149,4 @@ class BookingSerializer(serializers.ModelSerializer):
         validated_data['total_price'] = num_nights * room.price_per_night
 
         return super().create(validated_data)
+
