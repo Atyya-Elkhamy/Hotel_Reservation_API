@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.generics import CreateAPIView,ListCreateAPIView,RetrieveUpdateDestroyAPIView,RetrieveUpdateAPIView
 from rest_framework.views import APIView
 from rest_framework import status, permissions
+from rest_framework.response import Response
 
 
 
@@ -95,6 +96,8 @@ class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
 class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView): 
     serializer_class = UserSerializer
     permission_classes = [IsHotelOwner | IsCustomer]
+    lookup_field = None
+    lookup_url_kwarg = None
 
     def get_object(self):
         return self.request.user
@@ -103,21 +106,19 @@ class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView):
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance)
-            return JsonResponse(serializer.data)
+            return Response (serializer.data)
         except Exception as e:
+            print("GET error:", str(e))  # ← this will help
             return JsonResponse({"error": str(e)}, status=400)
     def update(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            confirmed = serializer.validated_data.get['confirmed']
-            if confirmed:
-                return JsonResponse({"error": "Provided Unknown credentials 'confirmed' "}, status=400)
-            else:
-                serializer.save()
+            serializer.save()
             return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
         except Exception as e:
+            print(e)
             return JsonResponse({"error": str(e)}, status=400)
 
 

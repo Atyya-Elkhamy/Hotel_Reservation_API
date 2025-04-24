@@ -8,13 +8,26 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True, required=False)
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone', 'role','password']
+        fields = ['username', 'email', 'phone', 'role','password', 'password2']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'password2': {'write_only': True}
+        }
 
     def validate_password(self, value):
         validate_password(value)
         return value
+
+    def get(self, instance):
+        return {
+            'username': instance.username,
+            'email': instance.email,
+            'phone': instance.phone,
+            'role': instance.role,
+        }
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -30,11 +43,14 @@ class UserSerializer(serializers.ModelSerializer):
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
         instance.phone = validated_data.get('phone', instance.phone)
-        if 'password' in validated_data and 'confirm_password' in validated_data and validated_data['password'] == validated_data['confirm_password']:
-            validate_password(validated_data['password'])
-            instance.set_password(validated_data['password'])
-        else:
-            raise serializers.ValidationError("Passwords do not match.")
+        password = validated_data.get('password')
+        password2 = validated_data.get('password2')
+
+        if password or password2:
+            if password != password2:
+                raise serializers.ValidationError("Passwords do not match.")
+        validate_password(password)
+        instance.set_password(password)
         instance.save()
         return instance
 
