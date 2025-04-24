@@ -6,18 +6,20 @@ from accounts.serializers import UserSerializer
 class RoomTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomType
-        fields = ['id', 'room_type']
+        fields = "__all__"
 
 class RoomSerializer(serializers.ModelSerializer):
     room_type = serializers.PrimaryKeyRelatedField(queryset=RoomType.objects.all())
     class Meta:
         model = Room
-        fields = '__all__'
+        exclude = ['available_rooms']
 
     def validate(self, attrs):
         total_rooms = attrs.get('total_rooms')
         available_rooms = attrs.get('available_rooms')
         price_per_night = attrs.get('price_per_night')
+        hotel = attrs.get('hotel')
+        room_type = attrs.get('room_type')
         errors = {}
 
         if total_rooms is not None and total_rooms < 1:
@@ -29,7 +31,8 @@ class RoomSerializer(serializers.ModelSerializer):
                 errors['available_rooms'] = "Available rooms cannot exceed total rooms"
         if price_per_night is not None and price_per_night <= 0:
             errors['price_per_night'] = "Price per night must be greater than 0"
-
+        if hotel and room_type and room_type.hotel != hotel:
+            errors['room_type'] = "Selected room type does not belong to the selected hotel"
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
@@ -62,6 +65,8 @@ class HotelSerializer(serializers.ModelSerializer):
         phone = attrs.get('phone')
         email = attrs.get('email')
         name = attrs.get('name')
+       
+        errors = {}
 
         if not (3 <= stars <= 7):
             raise serializers.ValidationError({"stars": "Stars must be between 3 and 7"})
@@ -72,7 +77,8 @@ class HotelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "Invalid email format"})
         if not re.match(r"^[a-zA-Z\s']+$", name):
             raise serializers.ValidationError({"name": "Name must contain only letters and spaces"})
-        return attrs
+
+        
 
     def create(self, validated_data):
         return super().create(validated_data)

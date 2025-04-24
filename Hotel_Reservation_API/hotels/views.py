@@ -92,6 +92,14 @@ class HotelFilterByStarsView(APIView):
 # Room Views
 class RoomCreateView(APIView):
     def post(self, request):
+        print(request.data)
+        if 'room_type' in request.data:
+            try:
+                room_type_id = request.data['room_type']
+                room_type = RoomType.objects.get(id=room_type_id)
+                request.data['room_type'] = room_type.id  
+            except RoomType.DoesNotExist:
+                return Response({"error": "RoomType does not exist"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = RoomSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -181,6 +189,17 @@ class RoomTypeView(APIView):
             serializer.save(hotel=hotel)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class HotelsRoomTypeView(APIView):
+    def get(self, request, hotel_id):
+        try:
+            hotel = Hotel.objects.get(pk=hotel_id)
+        except Hotel.DoesNotExist:
+            return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        room_types = RoomType.objects.filter(hotel=hotel)
+        serializer = RoomTypeSerializer(room_types, many=True)
+        return Response(serializer.data)
     
 # Hotel Image Views
 class HotelImageCreateView(APIView):
