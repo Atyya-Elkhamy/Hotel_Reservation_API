@@ -24,5 +24,5 @@ urlpatterns = [
     path("",include("bookings.urls")),
     path("",include("payments.urls")),
     path("",include("notifications.urls")),
-    path('api/', include('reviews.urls')),
+    path('', include('reviews.urls')),
 ]

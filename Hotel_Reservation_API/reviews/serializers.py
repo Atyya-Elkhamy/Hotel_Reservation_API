@@ -11,7 +11,7 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 class HotelSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hotel
-        fields = ['id', 'name', 'image']
+        fields = "__all__"
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_details = UserSimpleSerializer(source='user', read_only=True)
