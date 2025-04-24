@@ -7,7 +7,7 @@ from .models import Hotel, Room, HotelImage
 from .serializers import HotelSerializer, RoomSerializer, HotelImageSerializer
 from notifications.models import Notification
 from rest_framework.permissions import IsAuthenticated , AllowAny
-# Hotel Views
+from accounts.permissions import IsHotelOwner# Hotel Views
 class HotelListView(APIView):
     def get(self, request):
         hotels = Hotel.objects.all()
@@ -23,10 +23,10 @@ class HotelListView(APIView):
 class HotelCreateView(CreateAPIView):
     queryset = Hotel.objects.all()
     serializer_class = HotelSerializer
-    permission_classes = [AllowAny]  
+    permission_classes = [IsAuthenticated]  
 
     def perform_create(self, serializer):
-        serializer.save()  
+        serializer.save(owner=self.request.user)  
 class HotelUpdateView(UpdateAPIView):
     queryset = Hotel.objects.all()
     serializer_class = HotelSerializer
@@ -166,22 +166,20 @@ class RoomsByHotelView(APIView):
 
         rooms = Room.objects.filter(hotel=hotel)
         serializer = RoomSerializer(rooms, many=True)
+        print(serializer.data)
         return Response(serializer.data)
 # Hotel Image Views
 class HotelImageCreateView(APIView):
     def post(self, request, pk=None):
         try:
-            hotel = Hotel.objects.get(pk=pk)
+            print(request.data)
+            hotel = Hotel.objects.get(id=request.data['hotel_id'])
         except Hotel.DoesNotExist:
             return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = HotelImageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(hotel=hotel)
-            Notification.objects.create(
-                user=request.user,
-                message=f"Image for hotel '{hotel.name}' has been successfully created!"
-            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

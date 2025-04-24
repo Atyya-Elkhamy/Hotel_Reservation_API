@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Booking
 from datetime import datetime
 from datetime import timedelta
-from .models import Payment
+
 from hotels.serializers import RoomSerializer , HotelSerializer
 
 

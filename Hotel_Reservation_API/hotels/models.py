@@ -6,7 +6,6 @@ from datetime import datetime
 from django.utils import timezone
 from django.utils.timezone import now
 from bookings.models import Booking
-
 from uuid import uuid4
 # from django.contrib.gis.db import models as geomodels
 
@@ -14,7 +13,6 @@ class Hotel(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="hotels", null=True)
     name = models.CharField(max_length=255 , unique=True)
     description = models.TextField(blank=True, null=True ,max_length=500)
-    location = models.CharField(max_length=255)
     address = models.TextField(max_length=200)
     phone = models.CharField(max_length=20, unique=True , default='00000000000')
     stars = models.PositiveIntegerField(validators=[MinValueValidator(3), MaxValueValidator(7)],  null= True)
@@ -23,19 +21,19 @@ class Hotel(models.Model):
     price_range = models.CharField(max_length=50, blank=True, null=True)
     # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    @property
+    def rooms(self):
+        return self.rooms_set.all()
     def __str__(self):
         return self.name
     class Meta():
         db_table = "hotel"
 
 class HotelImage(models.Model):
-
     def Hotel_image_path(instance,filename):
         ext = filename.split('.')[-1]
         filename = f"{uuid.uuid4()}.{ext}"
         return f'hotel_images/{datetime.now().strftime("%y/%m/%d")}/{uuid4()}.{filename.split(".")[-1]}'
-
-
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to=Hotel_image_path)
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -51,7 +49,7 @@ class Room(models.Model):
     ROOM_TYPES = [
         ('single', 'Single'),
         ('double', 'Double'),
-        ('suite', 'Suite'),
+        ('suite', 'Suite'),  #hotel owner can add types
     ]
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="rooms")
     room_type = models.CharField(max_length=100, choices=ROOM_TYPES,unique=True)
@@ -59,31 +57,7 @@ class Room(models.Model):
     total_rooms = models.PositiveIntegerField()
     available_rooms = models.PositiveIntegerField()
     amenities = models.TextField(max_length=500 , null=True) 
-    
-    def save(self, *args, **kwargs):
-        # Set price based on room type
-        if self.room_type == "suite":
-            self.price_per_night = 500
-        elif self.room_type == "double":
-            self.price_per_night = 300
-        elif self.room_type == "single":
-            self.price_per_night = 100
-
-        # Validate room numbers
-        if self.total_rooms < 0:
-            raise ValueError("Total rooms cannot be negative.")
-        booked_rooms = Booking.objects.filter(room=self).count()
-
-        self.available_rooms = max(self.total_rooms - booked_rooms, 0)
-
-        if self.available_rooms < 0:
-            raise ValueError("Available rooms cannot be negative.")
-        if self.available_rooms > self.total_rooms:
-            raise ValueError("Available rooms cannot exceed total rooms.")
-        
-        super().save(*args, **kwargs)
-     
-
+ 
     def __str__(self):
         return f"{self.hotel.name} - {self.room_type}"
     class Meta():
