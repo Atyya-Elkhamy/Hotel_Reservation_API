@@ -1,10 +1,11 @@
-from django.urls import path
+from django.urls import path , include
 from .views import *
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework.authtoken.views import obtain_auth_token
 
 
 urlpatterns = [
-    #admin views
+    #admin views 
     path('user/', UserListCreateView.as_view(), name='user-list'),
     path('user/<int:pk>/', UserRetrieveUpdateDestroyView.as_view(), name='user-detail'),
     #customer and hotel owner views
