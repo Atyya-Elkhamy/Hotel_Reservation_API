@@ -6,12 +6,12 @@ from hotels.models import Hotel
 class UserSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username']  #
+        fields = ['id', 'username']
 
 class HotelSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hotel
-        fields = "__all__"  
+        fields = "__all__"
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_details = UserSimpleSerializer(source='user', read_only=True)
