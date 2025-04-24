@@ -52,15 +52,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-<<<<<<< HEAD
-=======
     'django.middleware.common.CommonMiddleware',
->>>>>>> origin/bookingCycle
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -111,11 +107,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'hotel',  
         'USER': 'postgres',
-<<<<<<< HEAD
         'PASSWORD': 'lojenmohamed243', 
-=======
-        'PASSWORD': '1234',
->>>>>>> origin/bookingCycle
         'HOST': 'localhost',           
         'PORT': '5432',                 
     }

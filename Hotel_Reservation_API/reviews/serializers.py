@@ -11,11 +11,7 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 class HotelSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hotel
-<<<<<<< HEAD
         fields = "__all__"
-=======
-        fields = "__all__"  
->>>>>>> origin/bookingCycle
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_details = UserSimpleSerializer(source='user', read_only=True)
