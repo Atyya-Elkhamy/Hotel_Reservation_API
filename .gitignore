@@ -1,10 +1,12 @@
-__pycache__/
+**/__pycache__/
 .vscode/
 .venv/
 **/.env
 **/migrations/
 */migrations/*.py
-# PyCharm settings
+**/.venv/
 **/.idea/
 **/.idea/*.xml
 **/.idea/*.im
+
+

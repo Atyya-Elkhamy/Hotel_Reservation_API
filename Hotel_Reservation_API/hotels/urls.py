@@ -1,5 +1,35 @@
-from django.urls import path
+from django.urls import path, re_path
 from .views import *
 
 urlpatterns = [
-]
+    path('', HotelListView.as_view(), name='hotel-list'),
+    path('create/', HotelCreateView.as_view(), name='hotel-create'),
+    path('update/<int:pk>/', HotelUpdateView.as_view(), name='hotel-update'),
+    path('detail/<int:pk>/', HotelDetailView.as_view(), name='hotel-detail'),
+    path('delete/<int:pk>/', HotelDeleteView.as_view(), name='hotel-delete'),
+    path('hotelfilter/<int:stars>/', HotelFilterByStarsView.as_view(), name='hotel-filter'),
+    path('roomcreate/', RoomCreateView.as_view(), name='room-create'),
+    path('roomlist/', RoomListView.as_view(), name='room-list'),
+    path('roomupdate/<int:pk>/', RoomUpdateView.as_view(), name='room-update'),
+    path('roomdelete/<int:pk>/', RoomDeleteView.as_view(), name='room-delete'),
+    path('roomdetail/<int:pk>/', RoomDetailView.as_view(), name='room-detail'),
+    path('roomfilter/<str:room_type>/', RoomFilterByTypeView.as_view(), name='room-filter'),
+    path('rooms/<int:hotel_id>/', RoomsByHotelView.as_view(), name='rooms-by-hotel'),
+
+   # Hotel Images
+        path("createimage/", HotelImageCreateView.as_view(), name="hotel-image-create"),
+        path("listimages/", HotelImageListView.as_view(), name="hotel-image-list"),
+        path("listimages/<int:pk>/", HotelImageListView.as_view(), name="hotel-image-list-pk"),
+        path("updateimage/<int:pk>/", HotelImageUpdateView.as_view(), name="hotel-image-update"),
+        path("deleteimage/<int:pk>/", HotelImageDeleteView.as_view(), name="hotel-image-delete"),
+    
+        path("roomcreateimage/", RoomImageCreateView.as_view(), name="room-image-create"),
+        path("roomlistimages/", RoomImageListView.as_view(), name="room-image-list"),
+        path("roomlistimages/<int:pk>/", RoomImageListView.as_view(), name="room-image-list-pk"),
+        path("roomupdateimage/<int:pk>/", RoomImageUpdateView.as_view(), name="room-image-update"),
+        path("roomdeleteimage/<int:pk>/", RoomImageDeleteView.as_view(), name="room-image-delete"),
+]       
+    # Room Images
+
+        # path("roomimages/<int:room_id>/", RoomImagesByRoomView.as_view(), name="room-images-by-room"),
+        # path("roomimages/<int:room_id>/", RoomImagesByRoomView.as_view(), name="room-images-by-room"),  
