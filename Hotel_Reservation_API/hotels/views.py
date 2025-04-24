@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import UpdateAPIView, ListAPIView, CreateAPIView, DestroyAPIView
-from .models import Hotel, Room, HotelImage
-from .serializers import HotelSerializer, RoomSerializer, HotelImageSerializer
+from .models import Hotel, Room, HotelImage, RoomType
+from .serializers import HotelSerializer, RoomSerializer, HotelImageSerializer, RoomTypeSerializer
 from notifications.models import Notification
 from rest_framework.permissions import IsAuthenticated , AllowAny
 from accounts.permissions import IsHotelOwner# Hotel Views
@@ -168,6 +168,20 @@ class RoomsByHotelView(APIView):
         serializer = RoomSerializer(rooms, many=True)
         print(serializer.data)
         return Response(serializer.data)
+#room type views
+class RoomTypeView(APIView):
+    def post(self, request, hotel_id):
+        try:
+            hotel = Hotel.objects.get(pk=hotel_id)
+        except Hotel.DoesNotExist:
+            return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = RoomTypeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(hotel=hotel)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 # Hotel Image Views
 class HotelImageCreateView(APIView):
     def post(self, request, *args, **kwargs):
@@ -308,4 +322,3 @@ class RoomImageDeleteView(APIView):
             message=f"Image for room '{room_image.room.room_type}' has been successfully deleted!"
         )
         return Response({"message": "Room image deleted"}, status=status.HTTP_204_NO_CONTENT)
- 

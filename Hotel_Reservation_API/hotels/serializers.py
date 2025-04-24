@@ -1,10 +1,15 @@
 from rest_framework import serializers
-from .models import Hotel, Room, HotelImage
+from .models import Hotel, Room, HotelImage , RoomType
 import re
 from accounts.serializers import UserSerializer
 
+class RoomTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoomType
+        fields = ['id', 'room_type']
 
 class RoomSerializer(serializers.ModelSerializer):
+    room_type = serializers.PrimaryKeyRelatedField(queryset=RoomType.objects.all())
     class Meta:
         model = Room
         fields = '__all__'
@@ -108,3 +113,4 @@ class RoomImageSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return super().create(validated_data)
+

@@ -46,13 +46,9 @@ class HotelImage(models.Model):
 
 # Room Model
 class Room(models.Model):
-    ROOM_TYPES = [
-        ('single', 'Single'),
-        ('double', 'Double'),
-        ('suite', 'Suite'),  #hotel owner can add types
-    ]
+   
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="rooms")
-    room_type = models.CharField(max_length=100, choices=ROOM_TYPES,unique=True)
+    room_type = models.ForeignKey('Roomtype', on_delete=models.CASCADE, related_name="rooms")
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2)
     total_rooms = models.PositiveIntegerField()
     available_rooms = models.PositiveIntegerField()
@@ -62,7 +58,16 @@ class Room(models.Model):
         return f"{self.hotel.name} - {self.room_type}"
     class Meta():
         db_table = "room"
+#room type model
+class RoomType(models.Model):
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="roomtype")
+    room_type = models.CharField(max_length=100)
+ 
+    def __str__(self):
+        return f"{self.hotel.name} - {self.room_type}"
 
+    class Meta:
+        db_table = "room_type"
 
 class RoomImage(models.Model):
     def Room_image_path(instance,filename):
