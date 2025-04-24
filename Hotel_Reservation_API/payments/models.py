@@ -31,7 +31,7 @@ class Payment(models.Model):
     transaction_id = models.CharField(max_length=255, unique=True,blank=True, null=True)
     status = models.CharField(max_length=20,  choices=PaymentStatus.choices, default=PaymentStatus.PENDING)
     payment_date = models.DateTimeField(default=timezone.now)
-    is_deposit = models.BooleanField(default=False)  # Whether this is a deposit or full payment
+    is_deposit = models.BooleanField(default=False) 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

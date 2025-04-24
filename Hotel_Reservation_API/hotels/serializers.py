@@ -76,7 +76,7 @@ class HotelSerializer(serializers.ModelSerializer):
 class HotelImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HotelImage
-        fields = '__all__'
+        exclude = ['hotel']
 
     def validate(self, attrs):
         image = attrs.get('image')

@@ -170,10 +170,13 @@ class RoomsByHotelView(APIView):
         return Response(serializer.data)
 # Hotel Image Views
 class HotelImageCreateView(APIView):
-    def post(self, request, pk=None):
+    def post(self, request, *args, **kwargs):
+        hotel_id = request.data.get('hotel_id')
+        if not hotel_id:
+            return Response({"error": "Hotel ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            print(request.data)
-            hotel = Hotel.objects.get(id=request.data['hotel_id'])
+            hotel = Hotel.objects.get(id=hotel_id)
         except Hotel.DoesNotExist:
             return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
 
