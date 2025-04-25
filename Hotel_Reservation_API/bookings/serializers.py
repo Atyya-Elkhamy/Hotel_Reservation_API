@@ -85,15 +85,30 @@ from datetime import date
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     total_price = serializers.DecimalField(read_only=True, max_digits=10, decimal_places=2)
+    has_conflict = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = '__all__'
 
+    def get_has_conflict(self, obj):
+        if obj.status != 'pending':
+            return False
+
+        overlapping = Booking.objects.filter(
+            room=obj.room,
+            status='confirmed',
+            check_in__lt=obj.check_out,
+            check_out__gt=obj.check_in
+        ).exclude(pk=obj.pk)
+
+        return overlapping.exists()
+
     def validate(self, data):
         check_in = data.get('check_in')
         check_out = data.get('check_out')
         room = data.get('room')
+        status = data.get('status')
         today = date.today()
 
         if not room:
@@ -112,6 +127,17 @@ class BookingSerializer(serializers.ModelSerializer):
             # Check: checkout must be after check-in
             if check_out <= check_in:
                 raise serializers.ValidationError({"check_out": "Check-out must be after check-in."})
+
+            if status == 'confirmed' and self.instance.status != 'confirmed':
+                existing_bookings = Booking.objects.filter(
+                    room=room,
+                    status='confirmed',
+                    check_in__lt=check_out,
+                    check_out__gt=check_in
+                ).exclude(pk=self.instance.pk)
+
+                if existing_bookings.exists():
+                    raise serializers.ValidationError("The room is already confirmed for the selected dates.")
 
             # Check: overlapping bookings
             existing_bookings = Booking.objects.filter(room=room, status='confirmed')

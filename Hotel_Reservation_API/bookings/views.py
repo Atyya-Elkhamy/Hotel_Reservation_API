@@ -26,17 +26,31 @@ class BookingListCreateAPIView(APIView):
 
 class BookingDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        return get_object_or_404(Booking, pk=pk)
+
     def get(self, request, pk):
-        booking = get_object_or_404(Booking, pk=pk)
+        booking = self.get_object(pk)
+        # Check if the user is authorized to view this booking
         if booking.user != request.user:
             raise PermissionDenied("You do not have permission to view this booking.")
         serializer = BookingSerializer(booking)
         return Response(serializer.data)
 
     def put(self, request, pk):
-        booking = get_object_or_404(Booking, pk=pk)
+        booking = self.get_object(pk)
+        # Check if the booking's status is 'confirmed', and prevent editing
+        if booking.status == 'confirmed':
+            return Response(
+                {"detail": "You cannot edit a confirmed booking."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Check if the user is authorized to edit this booking
         if booking.user != request.user:
-            raise PermissionDenied("You do not have permission to view this booking.")
+            raise PermissionDenied("You do not have permission to edit this booking.")
+
+        # Update the booking with the provided data
         serializer = BookingSerializer(instance=booking, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -44,8 +58,17 @@ class BookingDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        booking = get_object_or_404(Booking, pk=pk)
+        booking = self.get_object(pk)
+        # Check if the booking's status is 'confirmed', and prevent deletion
+        if booking.status == 'confirmed':
+            return Response(
+                {"detail": "You cannot delete a confirmed booking."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if the user is authorized to delete this booking
         if booking.user != request.user:
-            raise PermissionDenied("You do not have permission to view this booking.")
+            raise PermissionDenied("You do not have permission to delete this booking.")
+
         booking.delete()
         return Response({"detail": "Deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
