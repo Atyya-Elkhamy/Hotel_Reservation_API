@@ -146,16 +146,11 @@ class RoomDeleteView(APIView):
             return Room.objects.get(pk=pk)
         except Room.DoesNotExist:
             return None
-
     def delete(self, request, pk):
         room = self.get_object(pk)
         if room is None:
             return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
         room.delete()
-        Notification.objects.create(
-            user=request.user,
-            message=f"Room '{room.room_type}' has been successfully deleted!"
-        )
         return Response({"message": "Room deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 class RoomDetailView(APIView):
@@ -185,7 +180,6 @@ class RoomTypeView(APIView):
             hotel = Hotel.objects.get(pk=request.data['hotel'])
         except Hotel.DoesNotExist:
             return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
-
         serializer = RoomTypeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(hotel=hotel)
@@ -209,7 +203,6 @@ class HotelImageCreateView(APIView):
         hotel_id = request.data.get('hotel_id')
         if not hotel_id:
             return Response({"error": "Hotel ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             hotel = Hotel.objects.get(id=hotel_id)
         except Hotel.DoesNotExist:
@@ -262,16 +255,12 @@ class HotelImageDeleteView(APIView):
             return HotelImage.objects.get(pk=pk)
         except HotelImage.DoesNotExist:
             return None
-
     def delete(self, request, pk):
+        print(request.data)
         hotel_image = self.get_object(pk)
         if hotel_image is None:
             return Response({"error": "Hotel image not found"}, status=status.HTTP_404_NOT_FOUND)
         hotel_image.delete()
-        Notification.objects.create(
-            user=request.user,
-            message=f"Image for hotel '{hotel_image.hotel.name}' has been successfully deleted!"
-        )
         return Response({"message": "Hotel image deleted"}, status=status.HTTP_204_NO_CONTENT)
  
 # Room Image Views      
@@ -327,21 +316,17 @@ class RoomImageUpdateView(APIView):
             )
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class RoomImageDeleteView(APIView): 
-
     def get_object(self, pk):
         try:
-            return HotelImage.objects.get(pk=pk)
-        except HotelImage.DoesNotExist:
+            return RoomImage.objects.get(pk=pk)
+        except RoomImage.DoesNotExist:
             return None
-
     def delete(self, request, pk):
+        print(request.data)
         room_image = self.get_object(pk)
         if room_image is None:
             return Response({"error": "Room image not found"}, status=status.HTTP_404_NOT_FOUND)
         room_image.delete()
-        Notification.objects.create(
-            user=request.user,
-            message=f"Image for room '{room_image.room.room_type}' has been successfully deleted!"
-        )
         return Response({"message": "Room image deleted"}, status=status.HTTP_204_NO_CONTENT)
