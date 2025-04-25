@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Booking
 from datetime import datetime
-from datetime import timedelta
+from datetime import date
 
 # class BookingSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -81,32 +81,65 @@ from datetime import timedelta
         #                 )
 
         #     return data
+
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     total_price = serializers.DecimalField(read_only=True, max_digits=10, decimal_places=2)
+    has_conflict = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = '__all__'
 
+    def get_has_conflict(self, obj):
+        if obj.status != 'pending':
+            return False
+
+        overlapping = Booking.objects.filter(
+            room=obj.room,
+            status='confirmed',
+            check_in__lt=obj.check_out,
+            check_out__gt=obj.check_in
+        ).exclude(pk=obj.pk)
+
+        return overlapping.exists()
+
     def validate(self, data):
         check_in = data.get('check_in')
         check_out = data.get('check_out')
         room = data.get('room')
+        status = data.get('status')
+        today = date.today()
 
         if not room:
             raise serializers.ValidationError("Room must be specified.")
 
-        if self.instance:
-            if self.instance.status in ['confirmed', 'cancelled']:
-                raise serializers.ValidationError("You cannot edit a confirmed or cancelled booking.")
+        if self.instance and self.instance.status == 'confirmed':
+            raise serializers.ValidationError("You cannot edit a confirmed booking.")
 
         if check_in and check_out:
+            # Check: dates must not be in the past
+            if check_in < today:
+                raise serializers.ValidationError({"check_in": "Check-in date cannot be in the past."})
+            if check_out < today:
+                raise serializers.ValidationError({"check_out": "Check-out date cannot be in the past."})
+
+            # Check: checkout must be after check-in
             if check_out <= check_in:
                 raise serializers.ValidationError({"check_out": "Check-out must be after check-in."})
 
-        # Overlapping bookings check
-        if check_in and check_out:
+            if status == 'confirmed' and self.instance.status != 'confirmed':
+                existing_bookings = Booking.objects.filter(
+                    room=room,
+                    status='confirmed',
+                    check_in__lt=check_out,
+                    check_out__gt=check_in
+                ).exclude(pk=self.instance.pk)
+
+                if existing_bookings.exists():
+                    raise serializers.ValidationError("The room is already confirmed for the selected dates.")
+
+            # Check: overlapping bookings
             existing_bookings = Booking.objects.filter(room=room, status='confirmed')
             if self.instance:
                 existing_bookings = existing_bookings.exclude(pk=self.instance.pk)
