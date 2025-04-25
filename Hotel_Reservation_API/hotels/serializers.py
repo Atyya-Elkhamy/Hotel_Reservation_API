@@ -1,11 +1,18 @@
 from rest_framework import serializers
-from .models import Hotel, Room, HotelImage , RoomType
+from .models import Hotel, Room, HotelImage , RoomType , RoomImage
 import re
 from accounts.serializers import UserSerializer
 
 class RoomTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomType
+        fields = "__all__"
+
+class RoomSerializerFetch(serializers.ModelSerializer):
+    room_type = RoomTypeSerializer()  
+
+    class Meta:
+        model = Room
         fields = "__all__"
 
 class RoomSerializer(serializers.ModelSerializer):
@@ -102,11 +109,29 @@ class HotelImageSerializer(serializers.ModelSerializer):
 
 
 class RoomImageSerializer(serializers.ModelSerializer):
-    room = RoomSerializer(read_only=True)
+    room = RoomSerializerFetch()
     hotel = HotelSerializer(read_only=True)
 
     class Meta:
-        model = HotelImage
+        model = RoomImage
+        fields = '__all__'
+
+    def validate(self, attrs):
+        image = attrs.get('image')
+        if not image:
+            raise serializers.ValidationError({"image": "Image is required"})
+        if not image.name.endswith(('.png', '.jpg', '.jpeg')):
+            raise serializers.ValidationError({"image": "Image must be a PNG, JPG, or JPEG file"})
+        return attrs
+
+    def create(self, validated_data):
+        return super().create(validated_data)
+class RoomImageSerializerAdd(serializers.ModelSerializer):
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
+    hotel = HotelSerializer(read_only=True)
+
+    class Meta:
+        model = RoomImage
         fields = '__all__'
 
     def validate(self, attrs):

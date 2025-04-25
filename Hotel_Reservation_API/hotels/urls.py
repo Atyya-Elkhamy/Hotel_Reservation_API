@@ -24,7 +24,7 @@ urlpatterns = [
         path("deleteimage/<int:pk>/", HotelImageDeleteView.as_view(), name="hotel-image-delete"),
     
         path("roomcreateimage/", RoomImageCreateView.as_view(), name="room-image-create"),
-        path("roomlistimages/", RoomImageListView.as_view(), name="room-image-list"),
+        # path("roomlistimages/", RoomImageListView.as_view(), name="room-image-list"),
         path("roomlistimages/<int:pk>/", RoomImageListView.as_view(), name="room-image-list-pk"),
         path("roomupdateimage/<int:pk>/", RoomImageUpdateView.as_view(), name="room-image-update"),
         path("roomdeleteimage/<int:pk>/", RoomImageDeleteView.as_view(), name="room-image-delete"),
