@@ -46,12 +46,11 @@ class HotelImage(models.Model):
 
 # Room Model
 class Room(models.Model):
-   
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="rooms")
     room_type = models.ForeignKey('Roomtype', on_delete=models.CASCADE, related_name="rooms")
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2)
     total_rooms = models.PositiveIntegerField()
-    available_rooms = models.PositiveIntegerField()
+    available_rooms = models.PositiveIntegerField(null=True,default=0)
     amenities = models.TextField(max_length=500 , null=True) 
  
     def __str__(self):

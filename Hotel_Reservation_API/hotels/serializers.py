@@ -1,19 +1,26 @@
 from rest_framework import serializers
-from .models import Hotel, Room, HotelImage , RoomType
+from .models import Hotel, Room, HotelImage , RoomType , RoomImage
 import re
 from accounts.serializers import UserSerializer
 
 class RoomTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomType
-        fields = ['id', 'room_type']
+        fields = "__all__"
+
+class RoomSerializerFetch(serializers.ModelSerializer):
+    room_type = RoomTypeSerializer()  
+
+    class Meta:
+        model = Room
+        fields = "__all__"
 
 class RoomSerializer(serializers.ModelSerializer):
     room_type = serializers.PrimaryKeyRelatedField(queryset=RoomType.objects.all())
     class Meta:
         model = Room
-        fields = '__all__'
-    
+        exclude = ['available_rooms']
+
     def validate(self, attrs):
         total_rooms = attrs.get('total_rooms')
         available_rooms = attrs.get('available_rooms')
@@ -32,9 +39,7 @@ class RoomSerializer(serializers.ModelSerializer):
         if price_per_night is not None and price_per_night <= 0:
             errors['price_per_night'] = "Price per night must be greater than 0"
         if hotel and room_type and room_type.hotel != hotel:
-
             errors['room_type'] = "Selected room type does not belong to the selected hotel"
-
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
@@ -67,6 +72,8 @@ class HotelSerializer(serializers.ModelSerializer):
         phone = attrs.get('phone')
         email = attrs.get('email')
         name = attrs.get('name')
+       
+        errors = {}
 
         if not (3 <= stars <= 7):
             raise serializers.ValidationError({"stars": "Stars must be between 3 and 7"})
@@ -77,7 +84,8 @@ class HotelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "Invalid email format"})
         if not re.match(r"^[a-zA-Z\s']+$", name):
             raise serializers.ValidationError({"name": "Name must contain only letters and spaces"})
-        return attrs
+
+        
 
     def create(self, validated_data):
         return super().create(validated_data)
@@ -101,11 +109,29 @@ class HotelImageSerializer(serializers.ModelSerializer):
 
 
 class RoomImageSerializer(serializers.ModelSerializer):
-    room = RoomSerializer(read_only=True)
+    room = RoomSerializerFetch()
     hotel = HotelSerializer(read_only=True)
 
     class Meta:
-        model = HotelImage
+        model = RoomImage
+        fields = '__all__'
+
+    def validate(self, attrs):
+        image = attrs.get('image')
+        if not image:
+            raise serializers.ValidationError({"image": "Image is required"})
+        if not image.name.endswith(('.png', '.jpg', '.jpeg')):
+            raise serializers.ValidationError({"image": "Image must be a PNG, JPG, or JPEG file"})
+        return attrs
+
+    def create(self, validated_data):
+        return super().create(validated_data)
+class RoomImageSerializerAdd(serializers.ModelSerializer):
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
+    hotel = HotelSerializer(read_only=True)
+
+    class Meta:
+        model = RoomImage
         fields = '__all__'
 
     def validate(self, attrs):

@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator, MaxValueValidator
 from bookings.models import Booking
 from django.conf import settings
+from accounts.models import User
 import time
 
 class PaymentMethod(models.Model):
@@ -25,7 +26,7 @@ class Payment(models.Model):
         PAYPAL = 'paypal', 'PayPal'
         BANK_TRANSFER = 'bank_transfer', 'Bank Transfer'
     booking = models.OneToOneField(Booking, on_delete=models.CASCADE,related_name="payment")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payments' , null=True , blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments' , null=True , blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=50,choices=PaymentMethodChoice.choices)
     transaction_id = models.CharField(max_length=255, unique=True,blank=True, null=True)
@@ -86,7 +87,7 @@ class PaymentSettings(models.Model):
 
 class Payment(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="payments")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE , related_name='payments', null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_date = models.DateTimeField(default=timezone.now)
     transaction_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
