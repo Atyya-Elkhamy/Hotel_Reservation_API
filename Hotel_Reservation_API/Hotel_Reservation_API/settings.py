@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'notifications',
     'reviews',
     'rest_framework',
-    'corsheaders',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
@@ -74,10 +73,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
+    ]
 }
 
 ROOT_URLCONF = 'Hotel_Reservation_API.urls'

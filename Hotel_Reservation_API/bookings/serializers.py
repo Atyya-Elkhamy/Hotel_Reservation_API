@@ -149,4 +149,14 @@ class BookingSerializer(serializers.ModelSerializer):
         validated_data['total_price'] = num_nights * room.price_per_night
 
         return super().create(validated_data)
+    
 
+class ListBookingsSerializer(serializers.ModelSerializer):
+    hotel_name = serializers.CharField(source='hotel.name', read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = [
+            'id', 'hotel', 'hotel_name', 'room', 'check_in', 'check_out',
+            'total_price', 'status', 'payment_status', 'created_at'
+        ]

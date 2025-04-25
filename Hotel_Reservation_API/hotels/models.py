@@ -13,7 +13,7 @@ class Hotel(models.Model):
     location = models.CharField(max_length=255)
     address = models.TextField(max_length=200)
     phone = models.CharField(max_length=20, unique=True)
-    stars = models.PositiveIntegerField(validators=[MinValueValidator(3), MaxValueValidator(7)])
+    stars = models.PositiveIntegerField(validators=[MinValueValidator(3), MaxValueValidator(7)],default=3)
     email = models.EmailField(unique=True ,max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
 

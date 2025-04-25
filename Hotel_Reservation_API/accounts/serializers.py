@@ -30,6 +30,9 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        if validated_data['password'] != validated_data.get('password2'):
+            raise serializers.ValidationError("Passwords do not match.")
+        validate_password(validated_data['password'])
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],

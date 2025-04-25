@@ -3,9 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Booking
-from .serializers import BookingSerializer
+from .serializers import BookingSerializer, ListBookingsSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.generics import RetrieveAPIView,ListAPIView
 
 
 class BookingListCreateAPIView(APIView):
@@ -49,3 +50,11 @@ class BookingDetailAPIView(APIView):
             raise PermissionDenied("You do not have permission to view this booking.")
         booking.delete()
         return Response({"detail": "Deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+class BookingListAPIView(ListAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Get all bookings for the authenticated user
+        return Booking.objects.filter(user=self.request.user.id)
