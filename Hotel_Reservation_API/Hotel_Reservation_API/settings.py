@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
+    'chatbot',
 ]
 
 MIDDLEWARE = [
@@ -105,8 +106,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'hotel',  
-        'USER': 'postgres',
-        'PASSWORD': '12345678', 
+        'USER': 'hotel',
+        'PASSWORD': '123456',
         'HOST': 'localhost',           
         'PORT': '5432',                 
     }
