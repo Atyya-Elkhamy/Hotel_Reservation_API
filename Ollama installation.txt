@@ -1,0 +1,8 @@
+pip install langchain_text_splitters langchain_huggingface langchain_community langchain
+pip install unstructured
+pip install faiss-cpu
+pip install unstructured
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3
+ollama serve
+
