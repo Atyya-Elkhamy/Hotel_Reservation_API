@@ -13,11 +13,13 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = '__all__'
-
+    
     def validate(self, attrs):
         total_rooms = attrs.get('total_rooms')
         available_rooms = attrs.get('available_rooms')
         price_per_night = attrs.get('price_per_night')
+        hotel = attrs.get('hotel')
+        room_type = attrs.get('room_type')
         errors = {}
 
         if total_rooms is not None and total_rooms < 1:
@@ -29,6 +31,9 @@ class RoomSerializer(serializers.ModelSerializer):
                 errors['available_rooms'] = "Available rooms cannot exceed total rooms"
         if price_per_night is not None and price_per_night <= 0:
             errors['price_per_night'] = "Price per night must be greater than 0"
+        if hotel and room_type and room_type.hotel != hotel:
+
+            errors['room_type'] = "Selected room type does not belong to the selected hotel"
 
         if errors:
             raise serializers.ValidationError(errors)
