@@ -16,16 +16,23 @@ class QueryAPIView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get the question from request
+        # Get the question and model choice from request
         question = serializer.validated_data['question']
+        model_choice = serializer.validated_data.get('model', 'gemini')
 
         try:
-            # Initialize QA service and get answer
+            # Initialize QA service and get answer with model choice
             qa_service = QAService()
-            answer = qa_service.get_answer(question)
+            result = qa_service.get_answer_with_model_choice(question, model=model_choice)
 
-            # Save to database
-            query = Query(question=question, answer=answer)
+            # Save to database with model information
+            query = Query(
+                question=question,
+                answer=result['answer'],
+                model_requested=model_choice,
+                model_used=result['model_used'],
+                fallback_used=result['fallback_used']
+            )
             query.save()
 
             # Return response
@@ -42,6 +49,13 @@ class QueryAPIView(APIView):
 
 class QueryHistoryAPIView(APIView):
     def get(self, request):
-        queries = Query.objects.all().order_by('-timestamp')
+        # Get optional model filter
+        model_filter = request.query_params.get('model', None)
+
+        if model_filter:
+            queries = Query.objects.filter(model_used=model_filter).order_by('-timestamp')
+        else:
+            queries = Query.objects.all().order_by('-timestamp')
+
         serializer = QuerySerializer(queries, many=True)
         return Response(serializer.data)
