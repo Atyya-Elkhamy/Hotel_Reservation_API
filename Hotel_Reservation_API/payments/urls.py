@@ -1,9 +1,6 @@
 from django.urls import path
-from .views import PaymentListCreateView, PaymentDetailView, PaymentForReservationCreateView, PaymentSettingsView
-
+from .views import ClientInfoPaymentTypeView,PaymentMethodSelectionView
 urlpatterns = [
-    path('create/', PaymentListCreateView.as_view(), name='payment-list-create'),
-    path('detail/<int:pk>/', PaymentDetailView.as_view(), name='payment-detail'),
-    path('create-for-reservation/', PaymentForReservationCreateView.as_view(), name='payment-create-for-reservation'),
-    path('payment-settings/', PaymentSettingsView.as_view(), name='payment-settings'),
+        path('client-info/', ClientInfoPaymentTypeView.as_view(), name='client-info'),
+        path('payment-method/', PaymentMethodSelectionView.as_view(), name='payment-method'),
 ]
