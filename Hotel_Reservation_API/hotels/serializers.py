@@ -45,6 +45,8 @@ class RoomSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        # Ensure available_rooms is set to total_rooms during creation
+        validated_data['available_rooms'] = validated_data.get('total_rooms', 0)
         return super().create(validated_data)
 
 

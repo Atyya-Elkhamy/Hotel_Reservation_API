@@ -1,85 +1,74 @@
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Booking
-from .serializers import BookingSerializer
+from .models import Booking, BookingCartItem, BookingCartSummary
+from .serializers import *
+from hotels.models import RoomType
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework import generics
-# from .models import Payment
-# from .serializers import PaymentSerializer
 
-
-class BookingListCreateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        bookings = Booking.objects.filter(user=request.user)
-        serializer = BookingSerializer(bookings, many=True)
-        return Response(serializer.data)
-
+class CreateBookingView(APIView):
     def post(self, request):
-        serializer = BookingSerializer(data=request.data, context={'request': request})
+        print("Request Data:", request.data)
+        serializer = BookingSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            booking = serializer.save()
+            return Response({
+                "message": "Booking created successfully.",
+                "booking_id": booking.id,
+                "hotel": booking.hotel.name,
+                "check_in": booking.check_in,
+                "days": booking.days,
+                "total_price": booking.total_price,
+                "created_items": [
+                    {
+                        "room_type": item.room_type.room_type,
+                        "quantity": item.quantity
+                    } for item in booking.items.all()
+                ],
+                "summary_created": True
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "message": "Booking creation failed.",
+                "errors": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
 
+# class BookingPaymentDetailView(APIView):
+#     def get(self, request, booking_id):
+#         booking = get_object_or_404(Booking, id=booking_id)
 
-class BookingDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+#         if not hasattr(booking, "cart_summary"):
+#             return Response({"detail": "Summary not found. Please generate summary first."},
+#                             status=status.HTTP_400_BAD_REQUEST)
 
-    def get_object(self, pk):
-        return get_object_or_404(Booking, pk=pk)
+#         serializer = BookingPaymentSerializer(booking)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def get(self, request, pk):
-        booking = self.get_object(pk)
-        # Check if the user is authorized to view this booking
-        if booking.user != request.user:
-            raise PermissionDenied("You do not have permission to view this booking.")
-        serializer = BookingSerializer(booking)
-        return Response(serializer.data)
+class BookingPaymentDetailView(APIView):
+    # permission_classes = [IsAuthenticated]
 
-    def put(self, request, pk):
-        booking = self.get_object(pk)
-        # Check if the booking's status is 'confirmed', and prevent editing
-        if booking.status == 'confirmed':
+    def get(self, request, user_id):
+        # First, make sure the user making the request is the same as the user_id
+        if request.user.id != user_id:
             return Response(
-                {"detail": "You cannot edit a confirmed booking."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Check if the user is authorized to edit this booking
-        if booking.user != request.user:
-            raise PermissionDenied("You do not have permission to edit this booking.")
-
-        # Update the booking with the provided data
-        serializer = BookingSerializer(instance=booking, data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        booking = self.get_object(pk)
-        # Check if the booking's status is 'confirmed', and prevent deletion
-        if booking.status == 'confirmed':
-            return Response(
-                {"detail": "You cannot delete a confirmed booking."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "You do not have permission to view this user's bookings."},
+                status=status.HTTP_403_FORBIDDEN
             )
 
-        # Check if the user is authorized to delete this booking
-        if booking.user != request.user:
-            raise PermissionDenied("You do not have permission to delete this booking.")
+        # Now fetch the latest booking for this user
+        booking = Booking.objects.filter(user_id=user_id).order_by('-created_at').first()
 
-        booking.delete()
-        return Response({"detail": "Deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-    
-# class CreatePaymentView(generics.CreateAPIView):
-#     queryset = Payment.objects.all()
-#     serializer_class = PaymentSerializer
-#     permission_classes = [IsAuthenticated]
+        if not booking:
+            return Response(
+                {"detail": "No booking found for this user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-#     def perform_create(self, serializer):
-#         serializer.save(user=self.request.user)
+        if not hasattr(booking, "cart_summary"):
+            return Response(
+                {"detail": "Summary not found. Please generate summary first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = BookingPaymentSerializer(booking)
+        return Response(serializer.data, status=status.HTTP_200_OK)

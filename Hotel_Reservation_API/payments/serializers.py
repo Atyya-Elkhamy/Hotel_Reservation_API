@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Payment, PaymentSettings
+from .models import Payment
 import re
 from hotels.serializers import RoomSerializer,HotelSerializer
 from bookings.serializers import BookingSerializer
