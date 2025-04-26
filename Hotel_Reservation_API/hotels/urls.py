@@ -18,5 +18,6 @@ urlpatterns = [
     path("listimages/", HotelImageListView.as_view(), name="hotel-image-list"),
     path("updateimage/<int:pk>/", HotelImageUpdateView.as_view(), name="hotel-image-update"),
     path("deleteimage/<int:pk>/", HotelImageDeleteView.as_view(), name="hotel-image-delete"),
+    path("details/ownerhoteldetails/",OwnerHotelListView.as_view(), name='owner-hoteldetails'),
 
 ]

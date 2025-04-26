@@ -1,4 +1,4 @@
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,6 +7,8 @@ from .serializers import BookingSerializer, ListBookingsSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.generics import RetrieveAPIView,ListAPIView
+from hotels.models import Hotel
+from accounts.permissions import *
 
 
 class BookingListCreateAPIView(APIView):
@@ -81,3 +83,15 @@ class BookingListAPIView(ListAPIView):
     def get_queryset(self):
         # Get all bookings for the authenticated user
         return Booking.objects.filter(user=self.request.user.id)
+
+class BookingListByHotelAPIView(ListAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated, IsHotelOwner]
+
+    def get_queryset(self):
+        hotel_owner = self.request.user.id
+        hotel = Hotel.objects.filter(owner=hotel_owner).first()
+        if hotel:
+            return Booking.objects.filter(hotel=hotel)
+        else:
+            return NotFound("Hotel Has no reservations yet.")

@@ -226,3 +226,11 @@ class HotelImageDeleteView(APIView):
             message=f"Image for hotel '{hotel_image.hotel.name}' has been successfully deleted!"
         )
         return Response({"message": "Hotel image deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class OwnerHotelListView(ListAPIView):
+    serializer_class = HotelSerializer
+    def get_queryset(self):
+        user = self.request.user.id
+        print(user , "this is the user id")
+        return Hotel.objects.filter(owner=user)
