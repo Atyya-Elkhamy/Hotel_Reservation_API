@@ -53,7 +53,7 @@ class QAService:
                 self.gemini_llm = ChatGoogleGenerativeAI(
                     model="gemini-1.5-pro",
                     temperature=0.2,
-                    google_api_key="AIzaSyBElLfdFHk98zL2YxNRm3rlngJhZe7Psy4" ,  #os.environ.get(),
+                    google_api_key=  os.environ.get("GOOGL_API_KEY")
                 )
 
                 # Ollama - fallback model
