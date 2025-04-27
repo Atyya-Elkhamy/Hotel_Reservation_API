@@ -19,21 +19,21 @@ class Payment(models.Model):
         BANK_TRANSFER = 'bank_transfer', 'Bank Transfer'
     booking = models.OneToOneField(Booking, on_delete=models.CASCADE,related_name="payment")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments' , null=True , blank=True)
-    hotel = models.ForeignKey("hotels.Hotel", on_delete=models.CASCADE, related_name="payments", null=True, blank=True )
-    room = models.ForeignKey("hotels.Room", on_delete=models.CASCADE, related_name="payments", null=True, blank=True)
+    hotel = models.ForeignKey("hotels.Hotel", on_delete=models.CASCADE, related_name="payments", null=True, blank=True)
+    room = models.ForeignKey("hotels.Room", on_delete=models.CASCADE, related_name="payments")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=50,choices=PaymentMethodChoice.choices , default=PaymentMethodChoice.CREDIT_CARD)
     transaction_id = models.CharField(max_length=255, unique=True,blank=True, null=True)
     status = models.CharField(max_length=20,  choices=PaymentStatus.choices, default=PaymentStatus.PENDING)
     payment_date = models.DateTimeField(default=timezone.now)
     is_deposit = models.BooleanField(default=False) 
-    first_name = models.CharField(max_length=100 ,default="", blank=True, null=True)
-    last_name = models.CharField(max_length=100 ,default="", blank=True, null=True)
-    email = models.EmailField(default="", blank=True, null=True)
-    phone = models.CharField(max_length=20 , default="", blank=True, null=True)
-    address = models.TextField(default="", blank=True, null=True)
-    city = models.CharField(max_length=100, default="", blank=True, null=True)
-    region = models.CharField(max_length=100 , default="", blank=True, null=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    address = models.TextField()
+    city = models.CharField(max_length=100)
+    region = models.CharField(max_length=100)
 
     def calculate_deposit(self, total_amount):
         if not self.is_deposit:
@@ -43,17 +43,62 @@ class Payment(models.Model):
     
     def mark_as_completed(self, transaction_id=None):
         self.status = self.PaymentStatus.COMPLETED
-        time = int(time.time())
+        timestamp = int(time.time())
         if transaction_id:
             self.transaction_id = transaction_id
         else:
-            self.transaction_id = f"PAY-{self.pk}-{time}"
-        self.save()
+            self.transaction_id = f"PAY-{self.pk}-{timestamp}"
+        booking = self.booking
+        if booking:
+            for booking_item in booking.items.all():
+                from hotels.models import Room
+                room = Room.objects.filter(
+                    hotel=booking.hotel, 
+                    room_type=booking_item.room_type
+                ).first()
+                    
+                if room:
+                    room.available_rooms = max(0, room.available_rooms - booking_item.quantity)
+                    room.save()
+            
+            self.save()
     
     def __str__(self):
         return f"Payment #{self.pk} - {self.amount} | {self.get_status_display()}"
     class Meta:
         db_table = "payments"
+        ordering = ['-payment_date']
+
+
+class PaymentSettings(models.Model):
+    allow_card_payment = models.BooleanField(default=True)
+    allow_paypal = models.BooleanField(default=True)
+    allow_bank_transfer = models.BooleanField(default=True)
+    deposit_percentage = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2,
+        default=30.00,
+        validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
+    
+    def get_settings():
+        settings, created = PaymentSettings.objects.get_or_create(
+            id=1,
+            defaults={
+                'allow_card_payment': True,
+                'allow_paypal': True,
+                'allow_bank_transfer': True,
+                'deposit_percentage': Decimal('30.00')
+            }
+        )
+        return settings
+
+    def calculate_deposit(self, total_price):
+        return (self.deposit_percentage / Decimal('100')) * Decimal(total_price)
+    
+    class Meta:
+        verbose_name = "Payment Settings"
+        verbose_name_plural = "Payment Settings"
 
 
 
