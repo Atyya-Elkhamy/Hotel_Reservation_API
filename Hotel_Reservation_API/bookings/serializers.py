@@ -26,7 +26,6 @@ User = get_user_model()
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     hotel = serializers.PrimaryKeyRelatedField(queryset=Hotel.objects.all())
-    # items = BookingCartItemSerializer(many=True, read_only=True)
     item_inputs = BookingCartItemSerializer(many=True)
 
     class Meta:
@@ -48,36 +47,24 @@ class BookingSerializer(serializers.ModelSerializer):
             quantity = item['quantity']
             print("rooooom id is   ==== ",room_type)
             print("the quantity is   === ", quantity)
-
-            # Retrieve the RoomType object using room_type_id
-            # room_type = RoomType.objects.get(id=room_type_id)
             print(room_type)
-            # Ensure the room type belongs to the same hotel as the booking
             if room_type.hotel != booking.hotel:
                 raise serializers.ValidationError(f"Room type {room_type.room_type} does not belong to this hotel.")
             print("step oneeeeee ")
-            # Fetch the available room for the room type in the booking's hotel
             room = Room.objects.filter(room_type=room_type, hotel=booking.hotel).first()
             print("step twooooooo")
             if not room:
                 raise serializers.ValidationError(f"No room found for room type {room_type.room_type} in this hotel.")
-
-            # Create the BookingCartItem
             BookingCartItem.objects.create(booking=booking, room_type=room_type, quantity=quantity)
             print("step threeeeeeee ")
-            # Calculate the total price
             total += room.price_per_night * quantity
             print("the total is now == ", total)
 
-        # Multiply by the number of days if days are specified
         if booking.days:
             total *= booking.days
 
-        # Set the total price of the booking
         booking.total_price = total
         booking.save()
-
-        # Create the BookingCartSummary
         BookingCartSummary.objects.create(booking=booking)
 
         return booking
@@ -88,7 +75,6 @@ class BookingCartSummarySerializer(serializers.ModelSerializer):
         model = BookingCartSummary
         fields = "__all__"
         
-
 
 class BookingPaymentSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
