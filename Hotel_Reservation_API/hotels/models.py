@@ -52,6 +52,11 @@ class Room(models.Model):
     total_rooms = models.PositiveIntegerField()
     available_rooms = models.PositiveIntegerField(null=True,default=0)
     amenities = models.TextField(max_length=500 , null=True) 
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:  # Check if the object is being created
+            self.available_rooms = self.total_rooms
+        super().save(*args, **kwargs)
  
     def __str__(self):
         return f"{self.hotel.name} - {self.room_type}"

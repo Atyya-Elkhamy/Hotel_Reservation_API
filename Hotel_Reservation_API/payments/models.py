@@ -22,7 +22,7 @@ class Payment(models.Model):
     hotel = models.ForeignKey("hotels.Hotel", on_delete=models.CASCADE, related_name="payments", null=True, blank=True)
     room = models.ForeignKey("hotels.Room", on_delete=models.CASCADE, related_name="payments")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=50,choices=PaymentMethodChoice.choices)
+    payment_method = models.CharField(max_length=50,choices=PaymentMethodChoice.choices , default=PaymentMethodChoice.CREDIT_CARD)
     transaction_id = models.CharField(max_length=255, unique=True,blank=True, null=True)
     status = models.CharField(max_length=20,  choices=PaymentStatus.choices, default=PaymentStatus.PENDING)
     payment_date = models.DateTimeField(default=timezone.now)
