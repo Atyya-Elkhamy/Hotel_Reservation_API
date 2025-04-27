@@ -43,12 +43,25 @@ class Payment(models.Model):
     
     def mark_as_completed(self, transaction_id=None):
         self.status = self.PaymentStatus.COMPLETED
-        time = int(time.time())
+        timestamp = int(time.time())
         if transaction_id:
             self.transaction_id = transaction_id
         else:
-            self.transaction_id = f"PAY-{self.pk}-{time}"
-        self.save()
+            self.transaction_id = f"PAY-{self.pk}-{timestamp}"
+        booking = self.booking
+        if booking:
+            for booking_item in booking.items.all():
+                from hotels.models import Room
+                room = Room.objects.filter(
+                    hotel=booking.hotel, 
+                    room_type=booking_item.room_type
+                ).first()
+                    
+                if room:
+                    room.available_rooms = max(0, room.available_rooms - booking_item.quantity)
+                    room.save()
+            
+            self.save()
     
     def __str__(self):
         return f"Payment #{self.pk} - {self.amount} | {self.get_status_display()}"
@@ -56,7 +69,7 @@ class Payment(models.Model):
         db_table = "payments"
         ordering = ['-payment_date']
 
-# Add to models.py
+
 class PaymentSettings(models.Model):
     allow_card_payment = models.BooleanField(default=True)
     allow_paypal = models.BooleanField(default=True)
@@ -68,6 +81,18 @@ class PaymentSettings(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(100)]
     )
     
+    def get_settings():
+        settings, created = PaymentSettings.objects.get_or_create(
+            id=1,
+            defaults={
+                'allow_card_payment': True,
+                'allow_paypal': True,
+                'allow_bank_transfer': True,
+                'deposit_percentage': Decimal('30.00')
+            }
+        )
+        return settings
+
     def calculate_deposit(self, total_price):
         return (self.deposit_percentage / Decimal('100')) * Decimal(total_price)
     

@@ -6,6 +6,7 @@ from decimal import Decimal
 from .models import Payment, PaymentSettings
 from .serializers import PaymentSerializer, ClientInfoSerializer, PaymentMethodSerializer
 from bookings.models import Booking
+import time
 
 class ClientInfoPaymentTypeView(APIView):
     """
@@ -21,7 +22,7 @@ class ClientInfoPaymentTypeView(APIView):
         try:
             booking = Booking.objects.get(id=booking_id)
             
-            if booking.guest.id != request.user.id and not request.user.is_staff:
+            if booking.user.id != request.user.id and not request.user.is_staff:
                 return Response({"error": "Not authorized to pay for this booking"}, status=status.HTTP_403_FORBIDDEN)
                 
             serializer = ClientInfoSerializer(data=request.data)
@@ -31,13 +32,37 @@ class ClientInfoPaymentTypeView(APIView):
             payment_type = request.data.get('payment_type')
             if payment_type not in ['cash', 'online']:
                 return Response({"error": "Invalid payment type. Choose 'cash' or 'online'"}, 
-                                status=status.HTTP_400_BAD_REQUEST)
+                            status=status.HTTP_400_BAD_REQUEST)
+            
+            if not booking.items.exists():
+                return Response({"error": "No rooms in this booking"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            from hotels.models import Room
+            for item in booking.items.all():
+                room = Room.objects.filter(hotel=booking.hotel, room_type=item.room_type).first()
+                if not room:
+                    return Response({"error": f"Room type {item.room_type} not found"}, 
+                                  status=status.HTTP_400_BAD_REQUEST)
+                if room.available_rooms < item.quantity:
+                    return Response({"error": f"Not enough available rooms of type {item.room_type.room_type}. Only {room.available_rooms} left."}, 
+                                  status=status.HTTP_400_BAD_REQUEST)
+            
+            if payment_type == 'cash':
+                deposit_percent = 30
+                amount = (Decimal(deposit_percent) / Decimal('100')) * booking.total_price
+                is_deposit = True
+            else:
+                amount = booking.total_price
+                is_deposit = False
+            
+            first_item = booking.items.first()
+            first_room = Room.objects.get(hotel=booking.hotel, room_type=first_item.room_type)
             
             payment = Payment.objects.create(
                 booking=booking,
                 user=request.user,
-                room=booking.room,
-                hotel=booking.room.hotel,
+                room=first_room,  
+                hotel=booking.hotel,
                 first_name=serializer.validated_data.get('first_name'),
                 last_name=serializer.validated_data.get('last_name'),
                 email=serializer.validated_data.get('email'),
@@ -45,38 +70,41 @@ class ClientInfoPaymentTypeView(APIView):
                 address=serializer.validated_data.get('address'),
                 city=serializer.validated_data.get('city'),
                 region=serializer.validated_data.get('region'),
-                is_deposit=payment_type == 'cash',  # Deposit required for cash payments
+                is_deposit=payment_type == 'cash',
+                amount=amount,
                 status=Payment.PaymentStatus.PENDING
             )
             
-            if payment_type == 'cash':
-                deposit_percent = 30
-                payment.amount = (Decimal(deposit_percent) / Decimal('100')) * booking.total_price
-                payment.is_deposit = True
-            else:
-                payment.amount = booking.total_price
-                payment.is_deposit = False
+            if payment_type == 'online' or (payment_type == 'cash' and is_deposit):
+                for item in booking.items.all():
+                    room = Room.objects.get(hotel=booking.hotel, room_type=item.room_type)
+                    room.available_rooms -= item.quantity
+                    room.save()
                 
-            payment.save()
+                booking.status = 'confirmed'
+                booking.save()
             
             response_data = {
                 'payment_id': payment.id,
                 'booking_summary': {
                     'booking_id': booking.id,
-                    'room_name': booking.room.name,
-                    'check_in': booking.check_in_date,
-                    'check_out': booking.check_out_date,
+                    'rooms': [{'room_type': item.room_type.room_type, 'quantity': item.quantity} 
+                            for item in booking.items.all()],
+                    'check_in': booking.check_in,
+                    'check_out': booking.check_out,
                     'total_price': float(booking.total_price),
                 },
                 'is_deposit': payment.is_deposit,
                 'amount_to_pay': float(payment.amount),
                 'next_step': 'payment_method_selection'
             }
+        
             
             if payment.is_deposit:
                 response_data['deposit_message'] = f"A 30% deposit of {float(payment.amount)} is required for cash payments."
                 
             return Response(response_data, status=status.HTTP_201_CREATED)
+        
             
         except Booking.DoesNotExist:
             return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -117,7 +145,8 @@ class PaymentMethodSelectionView(APIView):
                 
             settings = PaymentSettings.objects.first()
             if not settings:
-                return Response({"error": "Payment settings not configured"}, status=status.HTTP_400_BAD_REQUEST)
+                settings = PaymentSettings()
+                settings.save()
                 
             allowed_methods = []
             if settings.allow_card_payment:
@@ -139,6 +168,7 @@ class PaymentMethodSelectionView(APIView):
             try:
                 transaction_id = f"TRANS-{payment.id}-{payment.booking.id}"
                 payment.mark_as_completed(transaction_id)
+                booking = payment.booking
                 
                 booking = payment.booking
                 if payment.is_deposit:
