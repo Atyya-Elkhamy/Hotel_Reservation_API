@@ -14,7 +14,7 @@ class Hotel(models.Model):
     name = models.CharField(max_length=255 , unique=True)
     description = models.TextField(blank=True, null=True ,max_length=500)
     address = models.TextField(max_length=200)
-    phone = models.CharField(max_length=20, unique=True , default='00000000000')
+    phone = models.CharField(max_length=20, unique=True , default='')
     stars = models.PositiveIntegerField(validators=[MinValueValidator(3), MaxValueValidator(7)],  null= True)
     email = models.EmailField(unique=True ,max_length=100 , null=True)
     created_at = models.DateTimeField(auto_now_add=True)
