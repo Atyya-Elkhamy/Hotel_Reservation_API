@@ -52,6 +52,9 @@ class BookingCartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.room_type.room_type} for Booking {self.booking.id}"
+    class Meta:
+        db_table = "booking_cart_item"
+        unique_together = ('booking', 'room_type')
 
 
 class BookingCartSummary(models.Model):
