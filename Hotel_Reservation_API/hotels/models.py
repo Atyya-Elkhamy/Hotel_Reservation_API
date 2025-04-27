@@ -14,7 +14,7 @@ class Hotel(models.Model):
     name = models.CharField(max_length=255 , unique=True)
     description = models.TextField(blank=True, null=True ,max_length=500)
     address = models.TextField(max_length=200)
-    phone = models.CharField(max_length=20, unique=True , default='00000000000')
+    phone = models.CharField(max_length=20, unique=True , default='')
     stars = models.PositiveIntegerField(validators=[MinValueValidator(3), MaxValueValidator(7)],  null= True)
     email = models.EmailField(unique=True ,max_length=100 , null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -52,6 +52,11 @@ class Room(models.Model):
     total_rooms = models.PositiveIntegerField()
     available_rooms = models.PositiveIntegerField(null=True,default=0)
     amenities = models.TextField(max_length=500 , null=True) 
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:  # Check if the object is being created
+            self.available_rooms = self.total_rooms
+        super().save(*args, **kwargs)
  
     def __str__(self):
         return f"{self.hotel.name} - {self.room_type}"
@@ -60,7 +65,7 @@ class Room(models.Model):
 #room type model
 class RoomType(models.Model):
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="roomtype")
-    room_type = models.CharField(max_length=100)
+    room_type = models.CharField(max_length=100 , unique=True)
  
     def __str__(self):
         return f"{self.hotel.name} - {self.room_type}"
