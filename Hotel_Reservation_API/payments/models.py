@@ -17,23 +17,23 @@ class Payment(models.Model):
         CREDIT_CARD = 'credit_card', 'Credit Card'
         PAYPAL = 'paypal', 'PayPal'
         BANK_TRANSFER = 'bank_transfer', 'Bank Transfer'
-    booking = models.OneToOneField(Booking, on_delete=models.CASCADE,related_name="payment")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments' , null=True , blank=True)
+    booking = models.OneToOneField(Booking, on_delete=models.CASCADE,related_name="payment", null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments', null=True )
     hotel = models.ForeignKey("hotels.Hotel", on_delete=models.CASCADE, related_name="payments", null=True, blank=True)
-    room = models.ForeignKey("hotels.Room", on_delete=models.CASCADE, related_name="payments")
+    room = models.ForeignKey("hotels.Room", on_delete=models.CASCADE, related_name="payments", null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=50,choices=PaymentMethodChoice.choices , default=PaymentMethodChoice.CREDIT_CARD)
     transaction_id = models.CharField(max_length=255, unique=True,blank=True, null=True)
     status = models.CharField(max_length=20,  choices=PaymentStatus.choices, default=PaymentStatus.PENDING)
     payment_date = models.DateTimeField(default=timezone.now)
     is_deposit = models.BooleanField(default=False) 
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    email = models.EmailField()
-    phone = models.CharField(max_length=20)
-    address = models.TextField()
-    city = models.CharField(max_length=100)
-    region = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=100 ,null=True)
+    last_name = models.CharField(max_length=100,null=True)
+    email = models.EmailField(null=True,default="",max_length=100)
+    phone = models.CharField(max_length=20,null=True)
+    address = models.TextField(null=True,default="",max_length=300)
+    city = models.CharField(max_length=100,null=True)
+    region = models.CharField(max_length=300,null=True)
 
     def calculate_deposit(self, total_amount):
         if not self.is_deposit:
