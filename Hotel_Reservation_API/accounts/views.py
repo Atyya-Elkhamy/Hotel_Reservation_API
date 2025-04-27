@@ -72,6 +72,34 @@ class UserRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
+
+class UserRetriveUpdateView(RetrieveUpdateAPIView): 
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = None
+    lookup_url_kwarg = None
+
+    def get_object(self):
+        return self.request.user
+    def get(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return Response (serializer.data)
+        except Exception as e:
+            print("GET error:", str(e))
+            return JsonResponse({"error": str(e)}, status=400)
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
+        except Exception as e:
+            print(e,'line 100 from UserRetriveUpdateView')
+            return JsonResponse({"error": str(e)}, status=400)
+
 # allowed for anyone
 class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
     serializer_class = UserSerializer

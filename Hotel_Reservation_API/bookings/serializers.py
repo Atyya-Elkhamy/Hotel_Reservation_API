@@ -186,6 +186,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
 class ListBookingsSerializer(serializers.ModelSerializer):
     hotel_name = serializers.CharField(source='hotel.name', read_only=True)
+    client_name = serializers.CharField(source='user.username', read_only=True)
     client_email = serializers.EmailField(source='user.email', read_only=True)
     hotel_address = serializers.CharField(source='hotel.address', read_only=True)
     room_type = serializers.CharField(source='room.room_type', read_only=True)
@@ -198,6 +199,6 @@ class ListBookingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = [
-            'id','user','client_email', 'hotel', 'hotel_name', 'room_type','room_id', 'check_in', 'check_out',
+            'id','user','client_name','client_email', 'hotel', 'hotel_name', 'room_type','room_id', 'check_in', 'check_out',
             'total_price', 'status', 'payment_status', 'created_at','hotel_image','hotel_address'
         ]
