@@ -59,11 +59,9 @@ class BookingListAPIView(ListAPIView):
         return Booking.objects.all()
 
 
-class BookingRetrieveAPIView(RetrieveAPIView):
+class BookingListAPIView(ListAPIView):
     serializer_class = ListBookingsSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = None
-    lookup_url_kwarg = None
 
     def get_queryset(self):
         # Get all bookings for the authenticated user
@@ -80,3 +78,44 @@ class BookingListByHotelAPIView(ListAPIView):
             return Booking.objects.filter(hotel=hotel)
         else:
             return NotFound("Hotel Has no reservations yet.")
+        
+
+class BookingsPaymentAllView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        bookings = Booking.objects.all()
+        serializer = BookingPaymentSerializer(bookings, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class HotelOwnerBookingsView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Use the authenticated user instead of passing owner_id
+        owner = request.user
+
+        # Get all hotels owned by the user
+        hotels = Hotel.objects.filter(owner=owner)
+        
+        if not hotels:
+            return Response({"detail": "No hotels found for this owner."}, status=404)
+
+        flat_booking_data = []
+        
+        # Iterate over all hotels
+        for hotel in hotels:
+            # Get all bookings for the hotel
+            bookings = Booking.objects.filter(hotel=hotel)
+
+            # Iterate over bookings and add each one to the flat list
+            for booking in bookings:
+                # Serialize each booking with hotel info included
+                booking_data = CustomBookingSerializer(booking).data
+                # Add the hotel name and owner name to each booking
+                booking_data["hotel_name"] = hotel.name
+                booking_data["owner_name"] = hotel.owner.username  # Or use full name if preferred
+                flat_booking_data.append(booking_data)
+
+        return Response(flat_booking_data)
