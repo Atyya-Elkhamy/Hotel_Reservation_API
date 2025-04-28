@@ -1,4 +1,8 @@
-from rest_framework.views import APIView
+from rest_framework.views import APIView 
+from rest_framework.generics import ListAPIView ,RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated 
+from accounts.permissions import IsHotelOwner
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Booking, BookingCartItem, BookingCartSummary
@@ -44,3 +48,35 @@ class BookingPaymentDetailView(APIView):
         serializer = BookingPaymentSerializer(booking)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
+class BookingListAPIView(ListAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Get all bookings for the authenticated user
+        return Booking.objects.all()
+
+
+class BookingRetrieveAPIView(RetrieveAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = None
+    lookup_url_kwarg = None
+
+    def get_queryset(self):
+        # Get all bookings for the authenticated user
+        return Booking.objects.filter(user=self.request.user.id)
+
+class BookingListByHotelAPIView(ListAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated, IsHotelOwner]
+
+    def get_queryset(self):
+        hotel_owner = self.request.user.id
+        hotel = Hotel.objects.filter(owner=hotel_owner).first()
+        if hotel:
+            return Booking.objects.filter(hotel=hotel)
+        else:
+            return NotFound("Hotel Has no reservations yet.")

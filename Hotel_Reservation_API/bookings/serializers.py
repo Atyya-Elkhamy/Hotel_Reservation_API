@@ -91,4 +91,23 @@ class BookingPaymentSerializer(serializers.ModelSerializer):
             "total_price": summary.total_price if summary else 0,
             "created_at": summary.created_at if summary else None
         }
+        return super().create(validated_data)
 
+class ListBookingsSerializer(serializers.ModelSerializer):
+    hotel_name = serializers.CharField(source='hotel.name', read_only=True)
+    client_name = serializers.CharField(source='user.username', read_only=True)
+    client_email = serializers.EmailField(source='user.email', read_only=True)
+    hotel_address = serializers.CharField(source='hotel.address', read_only=True)
+    room_type = serializers.CharField(source='room.room_type', read_only=True)
+    room_id = serializers.PrimaryKeyRelatedField(source='room.id', read_only=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    check_in = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
+    check_out = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
+    hotel_image = serializers.ImageField(source='hotel.images.first.image', read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = [
+            'id','user','client_name','client_email', 'hotel', 'hotel_name', 'room_type','room_id', 'check_in', 'check_out',
+            'total_price', 'status', 'created_at','hotel_image','hotel_address'
+        ]
