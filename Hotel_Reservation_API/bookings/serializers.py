@@ -109,5 +109,5 @@ class ListBookingsSerializer(serializers.ModelSerializer):
         model = Booking
         fields = [
             'id','user','client_name','client_email', 'hotel', 'hotel_name', 'room_type','room_id', 'check_in', 'check_out',
-            'total_price', 'status', 'payment_status', 'created_at','hotel_image','hotel_address'
+            'total_price', 'status', 'created_at','hotel_image','hotel_address'
         ]

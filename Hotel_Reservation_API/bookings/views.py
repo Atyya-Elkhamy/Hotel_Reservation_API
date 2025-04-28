@@ -1,5 +1,5 @@
 from rest_framework.views import APIView 
-from rest_framework.generics import ListAPIView 
+from rest_framework.generics import ListAPIView ,RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated 
 from accounts.permissions import IsHotelOwner
 from rest_framework.exceptions import NotFound
@@ -48,9 +48,22 @@ class BookingPaymentDetailView(APIView):
         serializer = BookingPaymentSerializer(booking)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
 class BookingListAPIView(ListAPIView):
     serializer_class = ListBookingsSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Get all bookings for the authenticated user
+        return Booking.objects.all()
+
+
+class BookingRetrieveAPIView(RetrieveAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = None
+    lookup_url_kwarg = None
 
     def get_queryset(self):
         # Get all bookings for the authenticated user
