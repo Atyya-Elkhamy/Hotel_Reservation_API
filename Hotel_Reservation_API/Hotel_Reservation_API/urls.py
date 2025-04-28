@@ -27,4 +27,6 @@ urlpatterns = [
     path("payments/",include("payments.urls")),
     path("notifications/",include("notifications.urls")),
     path("reviews/",include("reviews.urls")),
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('chat/', include('chatbot.urls')),
+
+    ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

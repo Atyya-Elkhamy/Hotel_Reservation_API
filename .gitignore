@@ -8,10 +8,7 @@
 **/.idea/
 **/.idea/*.xml
 **/.idea/*.im
-**/*.png
-**/*.jpg
-**/*.jpeg
-**/*.gif
-**/*.svg
+venv
+
 
 
