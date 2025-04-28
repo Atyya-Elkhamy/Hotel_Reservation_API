@@ -1,53 +1,82 @@
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.views import APIView
+from rest_framework.views import APIView 
+from rest_framework.generics import ListAPIView ,RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated 
+from accounts.permissions import IsHotelOwner
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Booking
-from .serializers import BookingSerializer
+from .models import Booking, BookingCartItem, BookingCartSummary
+from .serializers import *
+from hotels.models import RoomType
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticated, AllowAny
 
-
-class BookingListCreateAPIView(APIView):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
-    def get(self, request):
-        #bookings = Booking.objects.filter(user=request.user)
-        bookings = Booking.objects.all()
-        serializer = BookingSerializer(bookings, many=True)
-        return Response(serializer.data)
-
+class CreateBookingView(APIView):
     def post(self, request):
+        print("Request Data:", request.data)
         serializer = BookingSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            booking = serializer.save()
+            return Response({
+                "message": "Booking created successfully.",
+                "booking_id": booking.id,
+                "hotel": booking.hotel.name,
+                "check_in": booking.check_in,
+                "days": booking.days,
+                "total_price": booking.total_price,
+                "created_items": [
+                    {
+                        "room_type": item.room_type.room_type,
+                        "quantity": item.quantity
+                    } for item in booking.items.all()
+                ],
+                "summary_created": True
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "message": "Booking creation failed.",
+                "errors": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class BookingPaymentDetailView(APIView):
+    def get(self, request, booking_id):
+        booking = get_object_or_404(Booking, id=booking_id)
+
+        if not hasattr(booking, "cart_summary"):
+            return Response({"detail": "Summary not found. Please generate summary first."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = BookingPaymentSerializer(booking)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class BookingDetailAPIView(APIView):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
-    def get(self, request, pk):
-        booking = get_object_or_404(Booking, pk=pk)
-        # if booking.user != request.user:
-        #     raise PermissionDenied("You do not have permission to view this booking.")
-        serializer = BookingSerializer(booking)
-        return Response(serializer.data)
 
-    def put(self, request, pk):
-        booking = get_object_or_404(Booking, pk=pk)
-        # if booking.user != request.user:
-        #     raise PermissionDenied("You do not have permission to view this booking.")
-        serializer = BookingSerializer(booking, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class BookingListAPIView(ListAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated]
 
-    def delete(self, request, pk):
-        booking = get_object_or_404(Booking, pk=pk)
-        # if booking.user != request.user:
-        #     raise PermissionDenied("You do not have permission to view this booking.")
-        booking.delete()
-        return Response({"detail": "Deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    def get_queryset(self):
+        # Get all bookings for the authenticated user
+        return Booking.objects.all()
+
+
+class BookingRetrieveAPIView(RetrieveAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = None
+    lookup_url_kwarg = None
+
+    def get_queryset(self):
+        # Get all bookings for the authenticated user
+        return Booking.objects.filter(user=self.request.user.id)
+
+class BookingListByHotelAPIView(ListAPIView):
+    serializer_class = ListBookingsSerializer
+    permission_classes = [IsAuthenticated, IsHotelOwner]
+
+    def get_queryset(self):
+        hotel_owner = self.request.user.id
+        hotel = Hotel.objects.filter(owner=hotel_owner).first()
+        if hotel:
+            return Booking.objects.filter(hotel=hotel)
+        else:
+            return NotFound("Hotel Has no reservations yet.")
