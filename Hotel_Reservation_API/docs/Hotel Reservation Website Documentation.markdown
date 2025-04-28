@@ -132,15 +132,6 @@ The primary purpose of the Hotel Reservation Website is to:
   - Early Bird: 10% off for bookings made 30+ days in advance.
   - Member Discount: 5% off for registered users.
 
-### User Accounts
-| User ID | Name              | Email                   | Booking History                     |
-|---------|-------------------|-------------------------|-------------------------------------|
-| U001    | John Smith        | john.smith@email.com    | Grand Ocean Resort (Jan 2025)       |
-| U002    | Maria Gonzalez    | maria.g@email.com       | Cityscape Inn (Dec 2024)            |
-| U003    | Li Wei            | li.wei@email.com        | Maple Leaf Hotel (Feb 2025)         |
-
----
-
 ## Frequently Asked Questions (FAQs)
 
 ### Website FAQs
