@@ -35,6 +35,7 @@ class UserListCreateView(ListCreateAPIView):
             user = serializer.save()
             return JsonResponse({"message": "User created successfully!", "user_id": user.id}, status=201)
         except Exception as e:
+            print("error in post method", str(e))
             return JsonResponse({"error": str(e)}, status=400)
 
 
@@ -112,15 +113,16 @@ class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
             confirmed = serializer.validated_data.get('confirmed')
             if role not in ['customer', 'hotel_owner']:
                 # print("error: Invalid role")
-                return JsonResponse({"error": "Invalid role. Choose either 'customer' or 'hotel_owner'."}, status=400)
+                return Response({"error": "Invalid role. Choose either 'customer' or 'hotel_owner'."}, status=400)
             elif confirmed:
                 # print("error: cant send confirmed")
-                return JsonResponse({"error": "Provided Unknown credentials 'confirmed' "}, status=400)
+                return Response({"error": "Provided Unknown credentials 'confirmed' "}, status=400)
             else:
                 user = serializer.save(role=serializer.validated_data['role'])
-            return JsonResponse({"message": "User created successfully!", "user_id": user.id}, status=201)
+            return Response({"message": "User created successfully!", "user_id": user.id}, status=201)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            print("error in create method", str(e))
+            return Response({"error": str(e)}, status=400)
 
 
 class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView): 
