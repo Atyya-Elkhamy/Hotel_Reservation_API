@@ -15,20 +15,23 @@ class ClientInfoPaymentTypeView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
+        print ("requ.user" , request.user.id)
+        print(request.data)
         booking_id = request.data.get('booking_id')
         if not booking_id:
             return Response({"error": "Booking ID is required"}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
             booking = Booking.objects.get(id=booking_id)
-            
-            if booking.user.id != request.user.id and not request.user.is_staff:
-                return Response({"error": "Not authorized to pay for this booking"}, status=status.HTTP_403_FORBIDDEN)
+         
+            # if booking.id != request.user.id:
+               
+            #     return Response({"error": "Not authorized to pay for this booking"}, status=status.HTTP_403_FORBIDDEN)
                 
             serializer = ClientInfoSerializer(data=request.data)
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                
+            print("serializer.validated_data", serializer.validated_data)    
             payment_type = request.data.get('payment_type')
             if payment_type not in ['cash', 'online']:
                 return Response({"error": "Invalid payment type. Choose 'cash' or 'online'"}, 
