@@ -7,6 +7,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 urlpatterns = [
     #admin views 
     path('user/', UserListCreateView.as_view(), name='user-list'),
+    path('user/admin/',UserRetriveUpdateView.as_view(), name='user-admin'),
     path('user/<int:pk>/', UserRetrieveUpdateDestroyView.as_view(), name='user-detail'),
     #customer and hotel owner views
     path('user/register/', HotelOwnerAndCustomerRegistrationView.as_view(), name='register'),

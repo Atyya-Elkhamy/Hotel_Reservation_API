@@ -300,3 +300,10 @@ class RoomImageDeleteView(APIView):
             return Response({"error": "Room image not found"}, status=status.HTTP_404_NOT_FOUND)
         room_image.delete()
         return Response({"message": "Room image deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+class OwnerHotelListView(ListAPIView):
+    serializer_class = HotelSerializer
+    def get_queryset(self):
+        user = self.request.user.id
+        print(user , "this is the user id")
+        return Hotel.objects.filter(owner=user)
