@@ -44,23 +44,3 @@ class BookingPaymentDetailView(APIView):
         serializer = BookingPaymentSerializer(booking)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-# class BookingPaymentDetailView(APIView):
-#     def get(self, request, user_id):
-#         if request.user.id != user_id:
-#             return Response(
-#                 {"detail": "You do not have permission to view this user's bookings."},
-#                 status=status.HTTP_403_FORBIDDEN
-#             )
-#         booking = Booking.objects.filter(user_id=user_id).order_by('-created_at').first()
-#         if not booking:
-#             return Response(
-#                 {"detail": "No booking found for this user."},
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-#         if not hasattr(booking, "cart_summary"):
-#             return Response(
-#                 {"detail": "Summary not found. Please generate summary first."},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#         serializer = BookingPaymentSerializer(booking)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
