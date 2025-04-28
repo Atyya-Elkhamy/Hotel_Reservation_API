@@ -49,8 +49,10 @@ INSTALLED_APPS = [
     'notifications',
     'reviews',
     'rest_framework',
+    'corsheaders',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
+    'chatbot',
 ]
 
 MIDDLEWARE = [
@@ -68,10 +70,12 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
-REST_FRAMEWORK = {
+REST_FRAMEWORK ={
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    "DEFAULT_PRMISSION_CLASSES":[
+        'rest_framework.permission.IsAuthenticated'
     ]
 }
 
@@ -98,27 +102,17 @@ WSGI_APPLICATION = 'Hotel_Reservation_API.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'hotel',  
-#         'USER': 'postgres',
-#         'PASSWORD': '12345678',
-#         'HOST': 'localhost',           
-#         'PORT': '5432',                 
-#     }
-# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'hotel',  
-        'USER': 'postgres',
-        'PASSWORD': 'lojenmohamed243', 
+        'USER': 'hotel',
+        'PASSWORD': '123456',
         'HOST': 'localhost',           
         'PORT': '5432',                 
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -161,7 +155,7 @@ STATICFILES_DIRS = [
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'Hotel_Reservation_API/media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -185,7 +179,14 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
 # Optional: Token lifetime config
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),
@@ -195,8 +196,3 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_BLACKLIST_ENABLED": True,
 }
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
-CORS_ALLOW_CREDENTIALS = True
