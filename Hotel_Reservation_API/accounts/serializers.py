@@ -6,22 +6,115 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 
+# class UserSerializer(serializers.ModelSerializer):
+#     id = serializers.IntegerField(read_only=True)
+#     password = serializers.CharField(write_only=True)
+#     password2 = serializers.CharField(write_only=True, required=False, allow_blank=True)
+#     class Meta:
+#         model = User
+#         fields = ['id','username', 'email', 'phone', 'role','password', 'password2','confirmed']
+#         read_only_fields = ['id', 'confirmed']
+#         extra_kwargs = {
+#             'password': {'write_only': True},
+#             'password2': {'write_only': True}
+#         }
+
+#     def validate_password(self, value):
+#         validate_password(value)
+#         return value
+
+#     def get(self, instance):
+#         return {
+#             'id': instance.id,
+#             'username': instance.username,
+#             'email': instance.email,
+#             'phone': instance.phone,
+#             'role': instance.role,
+#             'status': instance.confirmed,
+#         }
+
+#     def create(self, validated_data):
+#         if validated_data['password'] != validated_data.get('password2'):
+#             raise serializers.ValidationError("Passwords do not match.")
+#         validate_password(validated_data['password'])
+#         user = User.objects.create_user(
+#             username=validated_data['username'],
+#             email=validated_data['email'],
+#             password=validated_data['password'],
+#             phone=validated_data.get('phone', ''),
+#             role=validated_data.get('role', 'customer')
+#         )
+#         return user
+
+#     def update(self, instance, validated_data):
+#         instance.username = validated_data.get('username', instance.username)
+#         instance.email = validated_data.get('email', instance.email)
+#         instance.phone = validated_data.get('phone', instance.phone)
+#         password = validated_data.get('password')
+#         if not password:
+#             raise serializers.ValidationError("password is required to update your profile data.")
+#         if not instance.check_password(password):
+#             raise serializers.ValidationError("Old password is incorrect.")
+#         password2 = validated_data.get('password2')
+#         if password and password2:
+#             if not instance.check_password(password):
+#                 raise serializers.ValidationError("Old password is incorrect.")
+#             validate_password(password2)  # validate password strength
+#             instance.set_password(password2)
+#             print('password updated')
+#         instance.save()
+#         return instance
+
+import re
+from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
+from .models import User
+
 class UserSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
     class Meta:
         model = User
-        fields = ['id','username', 'email', 'phone', 'role','password', 'password2','confirmed']
+        fields = ['id', 'username', 'email', 'phone', 'role', 'password', 'password2', 'confirmed']
         read_only_fields = ['id', 'confirmed']
         extra_kwargs = {
             'password': {'write_only': True},
             'password2': {'write_only': True}
         }
 
-    def validate_password(self, value):
-        validate_password(value)
+    def validate_username(self, value):
+        if not re.match(r'^[A-Za-z]+$', value):
+            raise serializers.ValidationError("Username must contain only letters.")
         return value
+
+    def validate_email(self, value):
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w{2,4}$'
+        if not re.match(email_regex, value):
+            raise serializers.ValidationError("Enter a valid email address.")
+        return value
+
+    def validate_phone(self, value):
+        phone_regex = r'^(010|011|012|015)\d{8}$'
+        if not re.match(phone_regex, value):
+            raise serializers.ValidationError("Phone number must start with 010, 011, 012, or 015 and be exactly 11 digits.")
+        return value
+
+    def validate_password(self, value):
+        # Example strong password regex: Minimum 8 characters, at least 1 letter and 1 number and 1 special character
+        password_regex = r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
+        if not re.match(password_regex, value):
+            raise serializers.ValidationError(
+                "Password must be at least 8 characters long, include at least one letter, one number, and one special character."
+            )
+        validate_password(value)  # also apply Django's built-in password validators
+        return value
+
+    def validate(self, data):
+        if data.get('password') != data.get('password2'):
+            raise serializers.ValidationError({"password2": "Passwords do not match."})
+        return data
 
     def get(self, instance):
         return {
@@ -34,9 +127,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        if validated_data['password'] != validated_data.get('password2'):
-            raise serializers.ValidationError("Passwords do not match.")
-        validate_password(validated_data['password'])
+        validated_data.pop('password2', None)  # remove password2 safely
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
@@ -50,20 +141,23 @@ class UserSerializer(serializers.ModelSerializer):
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
         instance.phone = validated_data.get('phone', instance.phone)
+
         password = validated_data.get('password')
         if not password:
-            raise serializers.ValidationError("password is required to update your profile data.")
+            raise serializers.ValidationError("Password is required to update your profile data.")
         if not instance.check_password(password):
             raise serializers.ValidationError("Old password is incorrect.")
+        
         password2 = validated_data.get('password2')
-        if password and password2:
-            if not instance.check_password(password):
-                raise serializers.ValidationError("Old password is incorrect.")
-            validate_password(password2)  # validate password strength
+        if password2:
+            self.validate_password(password2)
             instance.set_password(password2)
-            print('password updated')
+            print('Password updated')
+        
         instance.save()
         return instance
+
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
