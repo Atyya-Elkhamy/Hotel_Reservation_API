@@ -12,14 +12,11 @@ from rest_framework.views import APIView
 from rest_framework import status, permissions
 from rest_framework.response import Response
 
-
-
 # allowed for admins
 class UserListCreateView(ListCreateAPIView): 
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
     queryset = UserSerializer.Meta.model.objects.all()
-
     def get(self, request, *args, **kwargs):
         try:
             queryset = self.get_queryset()
@@ -33,10 +30,9 @@ class UserListCreateView(ListCreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             user = serializer.save()
-            return JsonResponse({"message": "User created successfully!", "user_id": user.id}, status=201)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            print("error in post method", str(e))
-            return JsonResponse({"error": str(e)}, status=400)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # allowed for admins
