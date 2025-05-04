@@ -32,10 +32,7 @@ class CreateBookingView(APIView):
                 "summary_created": True
             }, status=status.HTTP_201_CREATED)
         else:
-            return Response({
-                "message": "Booking creation failed.",
-                "errors": serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors , status=status.HTTP_400_BAD_REQUEST)
 
 class BookingPaymentDetailView(APIView):
     def get(self, request, booking_id):
@@ -47,7 +44,6 @@ class BookingPaymentDetailView(APIView):
 
         serializer = BookingPaymentSerializer(booking)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 class BookingListAPIView(ListAPIView):

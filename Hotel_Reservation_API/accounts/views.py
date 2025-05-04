@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from email.utils import formataddr
 from twilio.rest import Client
 from django.conf import settings
-from .serializers import UserSerializer, CustomTokenObtainPairSerializer
+from .serializers import *
 from .permissions import *
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -29,7 +29,7 @@ class UserListCreateView(ListCreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            user = serializer.save()
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -100,26 +100,13 @@ class UserRetriveUpdateView(RetrieveUpdateAPIView):
 # allowed for anyone
 class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
     serializer_class = UserSerializer
-
     def create(self, request, *args, **kwargs):
-        try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            role = serializer.validated_data['role']
-            confirmed = serializer.validated_data.get('confirmed')
-            if role not in ['customer', 'hotel_owner']:
-                # print("error: Invalid role")
-                return Response({"error": "Invalid role. Choose either 'customer' or 'hotel_owner'."}, status=400)
-            elif confirmed:
-                # print("error: cant send confirmed")
-                return Response({"error": "Provided Unknown credentials 'confirmed' "}, status=400)
-            else:
-                user = serializer.save(role=serializer.validated_data['role'])
-            return Response({"message": "User created successfully!", "user_id": user.id}, status=201)
-        except Exception as e:
-            print("error in create method", str(e))
-            return Response({"error": str(e)}, status=400)
-
+        serilizer = UserSerializer(data=request.data)
+        if serilizer.is_valid():
+            role = 'customer'
+            serilizer.save(role=role)
+            return Response(serilizer.data,status=status.HTTP_201_CREATED)
+        return Response(serilizer.errors,status=status.HTTP_400_BAD_REQUEST)
 
 class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView): 
     serializer_class = UserSerializer
@@ -148,8 +135,7 @@ class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView):
         except Exception as e:
             print(e)
             return JsonResponse({"error": str(e)}, status=400)
-
-
+        
 #allowed for hotel oweners
 class EmployeeListCreateview(ListCreateAPIView): 
     serializer_class = UserSerializer
@@ -221,17 +207,11 @@ class LogoutView(APIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-def send_test_email(request):
-    try:
-        send_mail(
-            subject='Hello from Django!',
-            message='This is a test email 💌',
-            from_email=formataddr(("Hotel_App", "atyyaelkhamy50@gmail.com")),
-            recipient_list=['atiaelkhamy55@gmail.com'],
-            fail_silently=False,
-        )
-        return HttpResponse("Email sent successfully!")
-    except Exception as e:
-        return HttpResponse(f"Failed to send email: {e}", status=500)
+class RegisterUser(APIView):
+    def post(self , request):
+        serilizer = UserSerializerCreate(data=request.data)
+        if serilizer.is_valid():
+            role = 'customer'
+            serilizer.save(role=role)
+            return Response(serilizer.data,status=status.HTTP_201_CREATED)
+        return Response(serilizer.errors,status=status.HTTP_400_BAD_REQUEST)

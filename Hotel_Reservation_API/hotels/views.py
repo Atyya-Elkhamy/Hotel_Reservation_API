@@ -1,8 +1,7 @@
-from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import UpdateAPIView, ListAPIView, CreateAPIView, DestroyAPIView
+from rest_framework.generics import UpdateAPIView, ListAPIView
 from .models import Hotel, Room, HotelImage, RoomType
 from .serializers import *
 from notifications.models import Notification
@@ -16,7 +15,6 @@ class HotelListView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        print(request.data)
         serializer = HotelSerializerCreate(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -24,11 +22,9 @@ class HotelListView(APIView):
         print(serializer.errors) 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
  
-
 class HotelUpdateView(UpdateAPIView):
     queryset = Hotel.objects.all()
     serializer_class = HotelSerializer
-
     def perform_update(self, serializer):
         serializer.save()   
 
@@ -63,7 +59,6 @@ class HotelFilterByStarsView(APIView):
 
 class RoomCreateView(APIView):
     def post(self, request):
-        print(request.data)
         if 'room_type' in request.data:
             try:
                 room_type_id = request.data['room_type']
@@ -146,7 +141,6 @@ class RoomsByHotelView(APIView):
 class RoomTypeView(APIView):
     def post(self, request):
         try:
-            print(request.data)
             hotel = Hotel.objects.get(pk=request.data['hotel'])
         except Hotel.DoesNotExist:
             return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -226,19 +220,16 @@ class HotelImageDeleteView(APIView):
         except HotelImage.DoesNotExist:
             return None
     def delete(self, request, pk):
-        print(request.data)
         hotel_image = self.get_object(pk)
         if hotel_image is None:
             return Response({"error": "Hotel image not found"}, status=status.HTTP_404_NOT_FOUND)
         hotel_image.delete()
         return Response({"message": "Hotel image deleted"}, status=status.HTTP_204_NO_CONTENT)
- 
 # Room Image Views      
 
 class RoomImageCreateView(APIView):
     def post(self, request):
         try:
-            print(request.data)
             room = Room.objects.get(pk=request.data['room'])
         except Room.DoesNotExist:
             return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -254,7 +245,6 @@ class RoomImageCreateView(APIView):
     
 class RoomImageListView(APIView):
     def get(self, request, pk=None):
-        print(request.data)
         if pk:
             try:
                 room = Room.objects.get(pk=pk)
@@ -263,7 +253,6 @@ class RoomImageListView(APIView):
                 return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             images = HotelImage.objects.all()
-        
         serializer = HotelImageSerializer(images, many=True)
         return Response(serializer.data)
     
@@ -294,7 +283,6 @@ class RoomImageDeleteView(APIView):
         except RoomImage.DoesNotExist:
             return None
     def delete(self, request, pk):
-        print(request.data)
         room_image = self.get_object(pk)
         if room_image is None:
             return Response({"error": "Room image not found"}, status=status.HTTP_404_NOT_FOUND)

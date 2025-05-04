@@ -4,10 +4,9 @@ from .models import Booking, BookingCartItem, BookingCartSummary
 from hotels.models import Hotel, RoomType ,Room
 from hotels.serializers import *
 from django.contrib.auth import get_user_model
-
 from django.utils import timezone
-from datetime import timedelta
-
+from datetime import date
+from django.db import IntegrityError
 User = get_user_model()
 
 class BookingCartItemSerializer(serializers.ModelSerializer):
@@ -20,6 +19,47 @@ class BookingCartItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'room_type', 'room_type_id', 'quantity']
 
 
+# class BookingSerializer(serializers.ModelSerializer):
+#     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+#     hotel = serializers.PrimaryKeyRelatedField(queryset=Hotel.objects.all())
+#     item_inputs = BookingCartItemSerializer(many=True)
+#     class Meta:
+#         model = Booking
+#         fields = ['user', 'hotel', 'check_in', 'days', 'item_inputs']
+
+#     def validate_check_in(self, value):
+#         today = date.today()
+#         if value < today:
+#             raise serializers.ValidationError("Check-in date must be at least 1 days from today.")
+#         return value
+
+#     def create(self, validated_data):
+#         item_data = validated_data.pop('item_inputs', [])
+#         booking = Booking.objects.create(**validated_data)
+#         total = 0
+#         for item in item_data:
+#             if 'room_type' not in item or 'quantity' not in item:
+#                 raise serializers.ValidationError({"room_type":"Missing 'room_type' or 'quantity' in one of the items."})
+#             room_type = item['room_type']
+#             quantity = item['quantity']
+#             if room_type.hotel != booking.hotel:
+#                 raise serializers.ValidationError({"room_type":f"Room type {room_type.room_type} does not belong to this hotel."})
+#             room = Room.objects.filter(room_type=room_type, hotel=booking.hotel).first()
+#             if not room:
+#                 raise serializers.ValidationError({"room_type":f"No room found for room type {room_type.room_type} in this hotel."})
+#             if quantity > room.available_rooms:
+#                 raise serializers.ValidationError({"quantity":
+#                     f"Requested quantity ({quantity}) exceeds available rooms ({room.available_rooms}) "
+#                     f"for room type {room_type.room_type}."}
+#                 )
+#             BookingCartItem.objects.create(booking=booking, room_type=room_type, quantity=quantity)
+#             total += room.price_per_night * quantity
+#         if booking.days:
+#             total *= booking.days
+#         booking.total_price = total
+#         booking.save()
+#         BookingCartSummary.objects.create(booking=booking)
+#         return booking
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     hotel = serializers.PrimaryKeyRelatedField(queryset=Hotel.objects.all())
@@ -28,38 +68,67 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = ['user', 'hotel', 'check_in', 'days', 'item_inputs']
+
     def validate_check_in(self, value):
-        """Check that check-in date is at least 3 days from now."""
-        three_days_later = timezone.now() + timedelta(days=3)
-        if value <= three_days_later:
-            raise serializers.ValidationError("Check-in date must be at least 3 days from today.")
+        today = date.today()
+        if value < today:
+            raise serializers.ValidationError("Check-in date must be at least 1 day from today.")
         return value
+
+    def validate(self, data):
+        # Check for duplicate room_type entries
+        room_type_ids = [item['room_type'].id for item in data.get('item_inputs', []) if 'room_type' in item]
+        if len(room_type_ids) != len(set(room_type_ids)):
+            raise serializers.ValidationError({
+                "item_inputs": "Duplicate room types are not allowed. Please only include each room type once."
+            })
+        return data
 
     def create(self, validated_data):
         item_data = validated_data.pop('item_inputs', [])
         booking = Booking.objects.create(**validated_data)
         total = 0
-        print("the total is == ",total)
+
         for item in item_data:
             if 'room_type' not in item or 'quantity' not in item:
-                raise serializers.ValidationError("Missing 'room_type' or 'quantity' in one of the items.")
-
-            # Check if 'room_type_id' and 'quantity' exist in the item
+                raise serializers.ValidationError({"room_type": "Missing 'room_type' or 'quantity' in one of the items."})
+            
             room_type = item['room_type']
             quantity = item['quantity']
+
             if room_type.hotel != booking.hotel:
-                raise serializers.ValidationError(f"Room type {room_type.room_type} does not belong to this hotel.")
+                raise serializers.ValidationError({
+                    "room_type_id": f"Room type {room_type.room_type} does not belong to this hotel."
+                })
+
             room = Room.objects.filter(room_type=room_type, hotel=booking.hotel).first()
             if not room:
-                raise serializers.ValidationError(f"No room found for room type {room_type.room_type} in this hotel.")
-            BookingCartItem.objects.create(booking=booking, room_type=room_type, quantity=quantity)
+                raise serializers.ValidationError({
+                    "room_type_id": f"No room found for room type {room_type.room_type} in this hotel."
+                })
+
+            if quantity > room.available_rooms:
+                raise serializers.ValidationError({
+                    "quantity": f"Requested quantity ({quantity}) exceeds available rooms ({room.available_rooms}) "
+                                f"for room type {room_type.room_type}."
+                })
+
+            try:
+                BookingCartItem.objects.create(booking=booking, room_type=room_type, quantity=quantity)
+            except IntegrityError:
+                raise serializers.ValidationError({
+                    "room_type_id": f"Duplicate entry detected for room type {room_type.room_type}."
+                })
+
             total += room.price_per_night * quantity
+
         if booking.days:
             total *= booking.days
+
         booking.total_price = total
         booking.save()
-        BookingCartSummary.objects.create(booking=booking)
 
+        BookingCartSummary.objects.create(booking=booking)
         return booking
 
 class BookingCartSummarySerializer(serializers.ModelSerializer):
@@ -68,7 +137,6 @@ class BookingCartSummarySerializer(serializers.ModelSerializer):
         model = BookingCartSummary
         fields = "__all__"
         
-
 class BookingPaymentSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
     hotel = HotelSerializer(read_only=True)
@@ -103,13 +171,10 @@ class ListBookingsSerializer(serializers.ModelSerializer):
             'total_price', 'status', 'created_at','hotel_image','hotel_address'
         ]
 
-
-
 class CustomHotelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hotel
-        fields = ['id', 'name', 'owner','address']  # Customize according to your Hotel model fields
-
+        fields = ['id', 'name', 'owner','address']  
 
 class CustomBookingCartItemSerializer(serializers.ModelSerializer):
     room_type = serializers.StringRelatedField()
@@ -118,10 +183,9 @@ class CustomBookingCartItemSerializer(serializers.ModelSerializer):
         model = BookingCartItem
         fields = ['id', 'room_type', 'quantity']
 
-
 class CustomBookingPaymentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = BookingCartSummary  # Assuming BookingCartSummary holds the payment data
+        model = BookingCartSummary  
         fields = ['total_price', 'created_at']
 
 class CustomBookingSerializer(serializers.ModelSerializer):

@@ -20,7 +20,6 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         exclude = ['available_rooms']
-
     def validate(self, attrs):
         total_rooms = attrs.get('total_rooms')
         available_rooms = attrs.get('available_rooms')
@@ -42,37 +41,30 @@ class RoomSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
-
     def create(self, validated_data):
         validated_data['available_rooms'] = validated_data.get('total_rooms', 0)
         return super().create(validated_data)
-
 
 class HotelSerializer(serializers.ModelSerializer):
     rooms = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     user = UserSerializer(read_only=True)
-
     class Meta:
         model = Hotel
         fields = '__all__'
-
     def get_rooms(self, obj):
         from .serializers import RoomSerializer 
         rooms = Room.objects.filter(hotel=obj)
         return RoomSerializer(rooms, many=True).data
-
     def get_image(self, obj):
         from .serializers import HotelImageSerializer 
         images = HotelImage.objects.filter(hotel=obj)
         return HotelImageSerializer(images, many=True).data
-
     def validate(self, attrs):
         stars = attrs.get('stars')
         phone = attrs.get('phone')
         email = attrs.get('email')
-        name = attrs.get('name')
-       
+        name = attrs.get('name')     
         if not (3 <= stars <= 7):
             raise serializers.ValidationError({"stars": "Stars must be between 3 and 7"})
         if not (phone and phone.startswith(('010', '012', '011', '015')) and len(phone) == 11 and phone.isdigit()):
@@ -83,16 +75,13 @@ class HotelSerializer(serializers.ModelSerializer):
         if not re.match(r"^[a-zA-Z\s']+$", name):
             raise serializers.ValidationError({"name": "Name must contain only letters and spaces"})
         return attrs
-
     def create(self, validated_data):
         return super().create(validated_data)
-
 
 class HotelImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HotelImage
         exclude = ['hotel']
-
     def validate(self, attrs):
         image = attrs.get('image')
         if not image:
@@ -100,7 +89,6 @@ class HotelImageSerializer(serializers.ModelSerializer):
         if not image.name.endswith(('.png', '.jpg', '.jpeg')):
             raise serializers.ValidationError({"image": "Image must be a PNG, JPG, or JPEG file"})
         return attrs
-
     def create(self, validated_data):
         return super().create(validated_data)
 
@@ -108,11 +96,9 @@ class HotelImageSerializer(serializers.ModelSerializer):
 class RoomImageSerializer(serializers.ModelSerializer):
     room = RoomSerializerFetch()
     hotel = HotelSerializer(read_only=True)
-
     class Meta:
         model = RoomImage
         fields = '__all__'
-
     def validate(self, attrs):
         image = attrs.get('image')
         if not image:
@@ -120,17 +106,15 @@ class RoomImageSerializer(serializers.ModelSerializer):
         if not image.name.endswith(('.png', '.jpg', '.jpeg')):
             raise serializers.ValidationError({"image": "Image must be a PNG, JPG, or JPEG file"})
         return attrs
-
     def create(self, validated_data):
         return super().create(validated_data)
+    
 class RoomImageSerializerAdd(serializers.ModelSerializer):
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
     hotel = HotelSerializer(read_only=True)
-
     class Meta:
         model = RoomImage
         fields = '__all__'
-
     def validate(self, attrs):
         image = attrs.get('image')
         if not image:
@@ -138,7 +122,6 @@ class RoomImageSerializerAdd(serializers.ModelSerializer):
         if not image.name.endswith(('.png', '.jpg', '.jpeg')):
             raise serializers.ValidationError({"image": "Image must be a PNG, JPG, or JPEG file"})
         return attrs
-
     def create(self, validated_data):
         return super().create(validated_data)
 
@@ -163,7 +146,6 @@ class HotelSerializerCreate(serializers.ModelSerializer):
         phone = attrs.get('phone')
         email = attrs.get('email')
         name = attrs.get('name')
-       
         if not (3 <= stars <= 7):
             raise serializers.ValidationError({"stars": "Stars must be between 3 and 7"})
         if not (phone and phone.startswith(('010', '012', '011', '015')) and len(phone) == 11 and phone.isdigit()):
