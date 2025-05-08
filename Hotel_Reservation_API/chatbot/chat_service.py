@@ -4,7 +4,7 @@ from langchain_community.llms import Ollama
 from langchain_community.vectorstores import FAISS
 # from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
-# from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.document_loaders import DirectoryLoader
 from langchain.prompts import PromptTemplate
 import os
