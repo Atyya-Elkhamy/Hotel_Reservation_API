@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 User = get_user_model()
 import re
@@ -35,8 +36,8 @@ class UserSerializer(serializers.ModelSerializer):
         phone_regex = r'^(010|012|015|011)\d{8}$'
         if not re.match(phone_regex, phone):
             raise serializers.ValidationError({"phone":"Phone number must be 11 digits and start with 010, 012, 015, or 011"})
-        if data.get('password') != data.get('password2'):
-            raise serializers.ValidationError({"password2": "Passwords do not match."})
+        # if data.get('password') != data.get('password2'):
+        #     raise serializers.ValidationError({"password2": "Passwords do not match."})
 
         return data
 
@@ -69,14 +70,17 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.get('password')
         if not password:
             raise serializers.ValidationError("Password is required to update your profile data.")
-        if not instance.check_password(password):
+
+        if not check_password(password, instance.password):
             raise serializers.ValidationError("Old password is incorrect.")
         
         password2 = validated_data.get('password2')
-        if password2:
-            self.validate_password(password2)
+        print("password2", password2)
+        try:
+            validate_password(password2, instance)
             instance.set_password(password2)
-            print('Password updated')
+        except Exception as e:
+            raise serializers.ValidationError({"password2": e.messages})
         
         instance.save()
         return instance

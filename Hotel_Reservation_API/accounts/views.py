@@ -49,15 +49,15 @@ class UserRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request):
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
+            serializer.is_valid()
             serializer.save()
-            return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
+            return Response({"message": "User updated successfully!", "user_id": instance.id}, status=200)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            return Response(serializer.errors, status=400)
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -87,15 +87,12 @@ class UserRetriveUpdateView(RetrieveUpdateAPIView):
             print("GET error:", str(e))
             return JsonResponse({"error": str(e)}, status=400)
     def update(self, request, *args, **kwargs):
-        try:
             instance = self.get_object()
-            serializer = self.get_serializer(instance, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
-        except Exception as e:
-            print(e,'line 100 from UserRetriveUpdateView')
-            return JsonResponse({"error": str(e)}, status=400)
+            serializer = UserSerializer(instance, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "User updated successfully!", "user_id": instance.id}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # allowed for anyone
 class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
@@ -126,15 +123,12 @@ class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView):
             print("GET error:", str(e))  # ← this will help
             return JsonResponse({"error": str(e)}, status=400)
     def update(self, request, *args, **kwargs):
-        try:
             instance = self.get_object()
-            serializer = self.get_serializer(instance, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
-        except Exception as e:
-            print(e)
-            return JsonResponse({"error": str(e)}, status=400)
+            serializer = UserSerializer(instance, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "User updated successfully!", "user_id": instance.id}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 #allowed for hotel oweners
 class EmployeeListCreateview(ListCreateAPIView): 

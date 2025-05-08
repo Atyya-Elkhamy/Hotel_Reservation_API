@@ -7,7 +7,7 @@ from .serializers import ReviewSerializer
 
 
 class ReviewListCreateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
         print('User making GET request:', request.user) 
@@ -16,6 +16,9 @@ class ReviewListCreateAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        if not request.user.is_authenticated:
+            return Response({"error": "You must be logged in to create a review."},
+                            status=status.HTTP_401_UNAUTHORIZED)
         serializer = ReviewSerializer(data=request.data, context={'request': request})
         print(request)
         if serializer.is_valid():
