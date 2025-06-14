@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.generics import CreateAPIView,ListCreateAPIView,RetrieveUpdateDestroyAPIView,RetrieveUpdateAPIView
 from rest_framework.views import APIView
 from rest_framework import status, permissions
+from rest_framework.response import Response
 
 
 
@@ -71,6 +72,34 @@ class UserRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
+
+class UserRetriveUpdateView(RetrieveUpdateAPIView): 
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = None
+    lookup_url_kwarg = None
+
+    def get_object(self):
+        return self.request.user
+    def get(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return Response (serializer.data)
+        except Exception as e:
+            print("GET error:", str(e))
+            return JsonResponse({"error": str(e)}, status=400)
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
+        except Exception as e:
+            print(e,'line 100 from UserRetriveUpdateView')
+            return JsonResponse({"error": str(e)}, status=400)
+
 # allowed for anyone
 class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
     serializer_class = UserSerializer
@@ -80,10 +109,12 @@ class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             role = serializer.validated_data['role']
-            confirmed = serializer.validated_data.get['confirmed']
+            confirmed = serializer.validated_data.get('confirmed')
             if role not in ['customer', 'hotel_owner']:
+                # print("error: Invalid role")
                 return JsonResponse({"error": "Invalid role. Choose either 'customer' or 'hotel_owner'."}, status=400)
             elif confirmed:
+                # print("error: cant send confirmed")
                 return JsonResponse({"error": "Provided Unknown credentials 'confirmed' "}, status=400)
             else:
                 user = serializer.save(role=serializer.validated_data['role'])
@@ -95,6 +126,8 @@ class HotelOwnerAndCustomerRegistrationView(CreateAPIView):
 class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView): 
     serializer_class = UserSerializer
     permission_classes = [IsHotelOwner | IsCustomer]
+    lookup_field = None
+    lookup_url_kwarg = None
 
     def get_object(self):
         return self.request.user
@@ -103,21 +136,19 @@ class HotelOwnerAndCustomerRetriveUpdateView(RetrieveUpdateAPIView):
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance)
-            return JsonResponse(serializer.data)
+            return Response (serializer.data)
         except Exception as e:
+            print("GET error:", str(e))  # ← this will help
             return JsonResponse({"error": str(e)}, status=400)
     def update(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            confirmed = serializer.validated_data.get['confirmed']
-            if confirmed:
-                return JsonResponse({"error": "Provided Unknown credentials 'confirmed' "}, status=400)
-            else:
-                serializer.save()
+            serializer.save()
             return JsonResponse({"message": "User updated successfully!", "user_id": instance.id}, status=200)
         except Exception as e:
+            print(e)
             return JsonResponse({"error": str(e)}, status=400)
 
 
