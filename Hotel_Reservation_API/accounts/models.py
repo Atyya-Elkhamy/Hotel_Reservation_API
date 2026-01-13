@@ -13,10 +13,7 @@ class User(AbstractUser):
         ('admin', 'Admin'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
-    phone = models.BigIntegerField(blank=True, null=True, unique=True,
-                                                        validators=[
-                                                        MinValueValidator(1000000000),
-                                                        MaxValueValidator(99999999999999999999)])
+    phone = models.CharField(blank=True, null=True, unique=True)
     email = models.EmailField(unique=True)
     confirmed = models.BooleanField(default=False)
 

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
+    'chatbot',
 ]
 
 MIDDLEWARE = [
@@ -104,9 +105,9 @@ WSGI_APPLICATION = 'Hotel_Reservation_API.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hotel',  
+        'NAME': 'Hotel_Reservation_API',  
         'USER': 'postgres',
-        'PASSWORD': '12345678', 
+        'PASSWORD': 'mysecretpassword',
         'HOST': 'localhost',           
         'PORT': '5432',                 
     }

@@ -1,42 +1,91 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-
+from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
 User = get_user_model()
+import re
+from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     password = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True, required=False, allow_blank=True)
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone', 'role','password']
+        fields = ['id', 'username', 'email', 'phone', 'role', 'password', 'password2', 'confirmed']
+        read_only_fields = ['id', 'confirmed']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'password2': {'write_only': True}
+        }
+    def validate(self, data):
+        username = data["username"]
+        email = data["email"]
+        password = data["password"]
+        phone = data["phone"]
+        if not re.fullmatch(r'[A-Za-z _]+', username):
+            raise serializers.ValidationError({"username": "Only letters, spaces, and underscores are allowed."})
+        data["username"] = re.sub(r'\s+', ' ', username).strip()
+        email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+        if not re.match(email_regex, email):
+            raise serializers.ValidationError({"email":"Invalid email format"})
+        password_regex = r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$'
+        if not re.match(password_regex, password):
+            raise serializers.ValidationError({"password":"Password must be at least 8 characters long and include both letters and numbers"})
+        phone_regex = r'^(010|012|015|011)\d{8}$'
+        if not re.match(phone_regex, phone):
+            raise serializers.ValidationError({"phone":"Phone number must be 11 digits and start with 010, 012, 015, or 011"})
+        # if data.get('password') != data.get('password2'):
+        #     raise serializers.ValidationError({"password2": "Passwords do not match."})
 
-    def validate_password(self, value):
-        validate_password(value)
-        return value
+        return data
+
+    def get(self, instance):
+        return {
+            'id': instance.id,
+            'username': instance.username,
+            'email': instance.email,
+            'phone': instance.phone,
+            'role': instance.role,
+            'status': instance.confirmed,
+        }
 
     def create(self, validated_data):
+        validated_data.pop('password2', None)
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
-            phone=validated_data.get('phone', ''),
+            phone=validated_data['phone'],
             role=validated_data.get('role', 'customer')
         )
         return user
-    
+
     def update(self, instance, validated_data):
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
         instance.phone = validated_data.get('phone', instance.phone)
-        if 'password' in validated_data and 'confirm_password' in validated_data and validated_data['password'] == validated_data['confirm_password']:
-            validate_password(validated_data['password'])
-            instance.set_password(validated_data['password'])
-        else:
-            raise serializers.ValidationError("Passwords do not match.")
+
+        password = validated_data.get('password')
+        if not password:
+            raise serializers.ValidationError("Password is required to update your profile data.")
+
+        if not check_password(password, instance.password):
+            raise serializers.ValidationError("Old password is incorrect.")
+        
+        password2 = validated_data.get('password2')
+        print("password2", password2)
+        try:
+            validate_password(password2, instance)
+            instance.set_password(password2)
+        except Exception as e:
+            raise serializers.ValidationError({"password2": e.messages})
+        
         instance.save()
         return instance
+
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -48,3 +97,38 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "role": self.user.role,
         }
         return data
+    
+
+class UserSerializerCreate(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'phone', 'role', 'password']
+    def validate(self, data):
+        username = data["username"]
+        email = data["email"]
+        password = data["password"]
+        phone = data["phone"]
+        if not re.fullmatch(r'[A-Za-z _]+', username):
+            raise serializers.ValidationError({"username": "Only letters, spaces, and underscores are allowed."})
+        data["username"] = re.sub(r'\s+', ' ', username).strip()
+        email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+        if not re.match(email_regex, email):
+            raise serializers.ValidationError({"email":"Invalid email format"})
+        password_regex = r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$'
+        if not re.match(password_regex, password):
+            raise serializers.ValidationError({"password":"Password must be at least 8 characters long and include both letters and numbers"})
+        phone_regex = r'^(010|012|015|011)\d{8}$'
+        if not re.match(phone_regex, phone):
+            raise serializers.ValidationError({"phone":"Phone number must be 11 digits and start with 010, 012, 015, or 011"})
+
+        return data
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            phone=validated_data['phone'],
+            role=validated_data.get('role', 'customer')
+        )
+        return user
